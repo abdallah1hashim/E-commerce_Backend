@@ -5,6 +5,7 @@ import HTTPError, { ErrorType } from "../utils/HTTPError";
 
 import Product from "../Models/Product";
 import { clearImage } from "../utils/fns";
+import { validationResult } from "express-validator";
 
 export const getAllProducts = async (
   req: Request,
@@ -33,6 +34,11 @@ export const createProduct = async (
   // @ts-ignore
   const images = req.files?.images?.map((image) => image.filename) || [];
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+      return;
+    }
     const product = new Product(
       0,
       req.body.name,
@@ -46,17 +52,6 @@ export const createProduct = async (
     const result = await product.createProduct();
     res.status(201).json({ message: "Product created successfully", result });
   } catch (err: any) {
-    const filePath = path.resolve(__dirname, "../../images");
-    try {
-      await fs.unlink(filePath);
-      console.log(`File removed: ${overViewImagePath}`);
-    } catch (error: any) {
-      if (error.code === "ENOENT") {
-        console.warn(`File not found, skipping removal: ${filePath}`);
-      } else {
-        throw error;
-      }
-    }
     HTTPError.handleControllerError(err, next);
   }
 };

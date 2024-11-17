@@ -3,6 +3,9 @@ import { compare, hash } from "bcrypt";
 import { User } from "../Models/Users";
 import HTTPError from "../utils/HTTPError";
 import { sign } from "jsonwebtoken";
+import { config } from "dotenv";
+
+config();
 
 export class UserService {
   static async createUser(

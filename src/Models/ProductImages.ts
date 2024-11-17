@@ -4,12 +4,24 @@ import HTTPError from "../utils/HTTPError";
 export default class ProductImages {
   constructor(
     public id?: number,
-    public product_id?: number,
-    public image_url?: string
+    public image_url?: string,
+    public product_id?: number
   ) {
     this.id = id;
     this.product_id = product_id;
     this.image_url = image_url;
+  }
+
+  static async getImagesbyProductId(product_id: number) {
+    try {
+      const res = await pool.query(
+        "SELECT id,image_url FROM product_images WHERE product_id = $1",
+        [product_id]
+      );
+      return res.rows as ProductImages[];
+    } catch (error: any) {
+      HTTPError.handleModelError(error);
+    }
   }
 
   async updateProductImage() {

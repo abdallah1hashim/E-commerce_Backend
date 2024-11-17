@@ -13,9 +13,10 @@ export const isAutenticated = async (
     return;
   }
   try {
+    console.log(process.env.JWT_SECRET);
     decodedToken = verify(
       token.split(" ")[1],
-      process.env.JWT_SECRET as string
+      process.env.JWT_SECRET_KEY as string
     );
   } catch (err) {
     res.status(401).json({ message: "Invalid token" });

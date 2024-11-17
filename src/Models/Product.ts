@@ -1,5 +1,11 @@
 import HTTPError from "../utils/HTTPError";
 import Pool from "../utils/ds";
+import ProductImages from "./ProductImages";
+
+type Images = {
+  id: number;
+  image_url: string;
+};
 
 export default class Product {
   private created_at?: Date;
@@ -58,25 +64,27 @@ export default class Product {
       const results = await Pool.query(
         `SELECT 
           p.*, 
-          array_agg(pi.image_url) as images, 
           c.name as category 
           FROM 
             product p 
           LEFT JOIN 
-            product_images pi ON p.id = pi.product_id 
-          LEFT JOIN 
             category c ON p.category_id = c.id
           WHERE 
             p.id = $1
-          GROUP BY 
-            p.id, c.name
+          limit 1
         `,
         [this.id]
       );
       if (results.rows.length === 0) {
         throw new HTTPError(404, "Product not found");
       }
-      return results.rows[0] as Product;
+      const images = await ProductImages.getImagesbyProductId(
+        this.id as number
+      );
+      if (images) {
+        return { product: results.rows[0], images: images };
+      }
+      return results.rows[0];
     } catch (error: any) {
       HTTPError.handleModelError(error);
     }
