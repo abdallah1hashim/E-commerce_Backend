@@ -1,3 +1,5 @@
+import { NextFunction } from "express";
+
 export type ErrorType = "Model" | "Controller" | "server";
 
 export default class HTTPError extends Error {
@@ -6,11 +8,20 @@ export default class HTTPError extends Error {
     this.status = status;
     this.type = type;
   }
-  static HandleError(err: any, type?: ErrorType) {
+  static handleModelError(err: any) {
     throw new HTTPError(
       err.status || 500,
       err.message || "Internal Server Error",
-      err.type || type
+      err.type || "Model"
+    );
+  }
+  static handleControllerError(err: any, next: NextFunction) {
+    next(
+      new HTTPError(
+        err.status || 500,
+        err.message || "Internal Server Error",
+        err.type || "Controller"
+      )
     );
   }
 }

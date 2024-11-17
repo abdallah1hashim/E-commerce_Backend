@@ -49,7 +49,7 @@ export default class Product {
       }
       return result.rows as Product[];
     } catch (error: any) {
-      HTTPError.HandleError(error, "Model");
+      HTTPError.handleModelError(error);
     }
   }
 
@@ -78,7 +78,7 @@ export default class Product {
       }
       return results.rows[0] as Product;
     } catch (error: any) {
-      HTTPError.HandleError(error, "Model");
+      HTTPError.handleModelError(error);
     }
   }
 
@@ -112,7 +112,7 @@ export default class Product {
       results.rows[0] as Product;
       return results.rows[0] as Product;
     } catch (error: any) {
-      HTTPError.HandleError(error, "Model");
+      HTTPError.handleModelError(error);
     }
   }
 
@@ -135,7 +135,7 @@ export default class Product {
       }
       return results.rows[0] as Product;
     } catch (error: any) {
-      HTTPError.HandleError(error, "Model");
+      HTTPError.handleModelError(error);
     }
   }
 
@@ -157,7 +157,7 @@ export default class Product {
       );
       return results.rows[0] as Product;
     } catch (error: any) {
-      HTTPError.HandleError(error, "Model");
+      HTTPError.handleModelError(error);
     }
   }
 }

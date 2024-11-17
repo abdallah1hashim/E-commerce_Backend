@@ -5,15 +5,6 @@ import HTTPError, { ErrorType } from "../utils/HTTPError";
 
 import Product from "../Models/Product";
 import { clearImage } from "../utils/fns";
-const handleError = (err: any, next: NextFunction, type: ErrorType) => {
-  next(
-    new HTTPError(
-      err.status || 500,
-      err.message || "Internal Server Error",
-      type
-    )
-  );
-};
 
 export const getAllProducts = async (
   req: Request,
@@ -28,7 +19,7 @@ export const getAllProducts = async (
     const products = await Product.getAllProducts(limit, offset);
     res.status(200).json({ products });
   } catch (err: any) {
-    handleError(err, next, "Controller");
+    HTTPError.handleControllerError(err, next);
   }
 };
 
@@ -66,7 +57,7 @@ export const createProduct = async (
         throw error;
       }
     }
-    handleError(err, next, "Controller");
+    HTTPError.handleControllerError(err, next);
   }
 };
 
@@ -84,7 +75,7 @@ export const getProductById = async (
     const result = await product.getProductById();
     res.status(200).json({ result });
   } catch (err: any) {
-    handleError(err, next, "Controller");
+    HTTPError.handleControllerError(err, next);
   }
 };
 export const updateProduct = async (
@@ -111,7 +102,7 @@ export const updateProduct = async (
     const result = await product.updateProduct();
     res.status(200).json({ message: "Product updated successfully", result });
   } catch (err: any) {
-    handleError(err, next, "Controller");
+    HTTPError.handleControllerError(err, next);
   }
 };
 
@@ -140,6 +131,6 @@ export const deleteProduct = async (
       result,
     });
   } catch (err: any) {
-    handleError(err, next, "Controller");
+    HTTPError.handleControllerError(err, next);
   }
 };

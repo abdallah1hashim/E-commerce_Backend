@@ -19,7 +19,7 @@ export default class ProductImages {
         [this.image_url, this.id]
       );
     } catch (error: any) {
-      HTTPError.HandleError(error, "Model");
+      HTTPError.handleModelError(error);
     }
   }
   async deleteProductImage() {
@@ -29,7 +29,7 @@ export default class ProductImages {
         [this.id]
       );
     } catch (error: any) {
-      HTTPError.HandleError(error, "Model");
+      HTTPError.handleModelError(error);
     }
   }
 }

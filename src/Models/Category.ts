@@ -15,7 +15,7 @@ export default class Category {
       }
       return result.rows as Category[];
     } catch (error: any) {
-      HTTPError.HandleError(error, "Model");
+      HTTPError.handleModelError(error);
     }
   }
 
@@ -30,7 +30,7 @@ export default class Category {
       }
       return result.rows[0] as Category;
     } catch (error: any) {
-      HTTPError.HandleError(error, "Model");
+      HTTPError.handleModelError(error);
     }
   }
 
@@ -45,7 +45,7 @@ export default class Category {
       }
       return result.rows[0] as Category;
     } catch (error: any) {
-      HTTPError.HandleError(error, "Model");
+      HTTPError.handleModelError(error);
     }
   }
 
@@ -60,7 +60,7 @@ export default class Category {
       }
       return result.rows[0] as Category;
     } catch (error: any) {
-      HTTPError.HandleError(error, "Model");
+      HTTPError.handleModelError(error);
     }
   }
 }
