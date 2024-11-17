@@ -3,6 +3,7 @@ import multer, { diskStorage } from "multer";
 import path from "path";
 
 import shopRouter from "./routes/shop";
+import authRouter from "./routes/auth";
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 app.use("/shop", shopRouter);
+app.use("/auth", authRouter);
 
 app.use((error: any, req: Request, res: Response, next: NextFunction) => {
   error.type = error.type || "server";

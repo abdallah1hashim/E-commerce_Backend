@@ -1,6 +1,6 @@
 import { NextFunction } from "express";
 
-export type ErrorType = "Model" | "Controller" | "server";
+export type ErrorType = "Model" | "Controller" | "Service" | "Server";
 
 export default class HTTPError extends Error {
   constructor(public status: number, message: string, public type?: ErrorType) {
@@ -13,6 +13,13 @@ export default class HTTPError extends Error {
       err.status || 500,
       err.message || "Internal Server Error",
       err.type || "Model"
+    );
+  }
+  static handleServiceError(err: any) {
+    throw new HTTPError(
+      err.status || 500,
+      err.message || "Internal Server Error",
+      err.type || "Service"
     );
   }
   static handleControllerError(err: any, next: NextFunction) {
