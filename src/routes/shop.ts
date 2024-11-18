@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 import {
   createProduct,
   deleteProduct,
@@ -8,6 +8,7 @@ import {
 } from "../controllers/shop";
 import { ProductValidators } from "../validators/product";
 import { isAdminORStaff, isAutenticated } from "../middlewares/isAuth";
+import uploadMiddleware from "../middlewares/multer";
 
 const router = Router();
 
@@ -16,6 +17,7 @@ router.post(
   "/products",
   isAutenticated,
   isAdminORStaff,
+  uploadMiddleware,
   ProductValidators,
   createProduct
 );

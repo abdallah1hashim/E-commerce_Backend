@@ -1,42 +1,12 @@
 import express, { NextFunction, Request, Response } from "express";
-import multer, { diskStorage } from "multer";
-import path from "path";
 
 import shopRouter from "./routes/shop";
 import authRouter from "./routes/auth";
 
 const app = express();
 
-const fileStorage = diskStorage({
-  destination: (req, file, cb) => {
-    const imagesPath = path.join(__dirname, "..", "images");
-    cb(null, imagesPath);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
-
-const fileFilter = (
-  req: Request,
-  file: Express.Multer.File,
-  cb: multer.FileFilterCallback
-) => {
-  if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
-    cb(null, true);
-  } else {
-    cb(null, false);
-  }
-};
-
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(
-  multer({ storage: fileStorage, fileFilter: fileFilter }).fields([
-    { name: "overview_img_url", maxCount: 1 },
-    { name: "images", maxCount: 5 },
-  ])
-);
+app.use(express.urlencoded({ extended: true }));
 
 app.use("/images", express.static("images"));
 

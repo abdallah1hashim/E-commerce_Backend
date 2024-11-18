@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from "express";
-import fs from "fs/promises";
-import path from "path";
 import HTTPError, { ErrorType } from "../utils/HTTPError";
 
 import Product from "../Models/Product";
 import { clearImage } from "../utils/fns";
 import { validationResult } from "express-validator";
+import { CustomFiles } from "../types";
+import { handlefileUpload, saveImage } from "../middlewares/multer";
 
 export const getAllProducts = async (
   req: Request,
@@ -25,32 +25,51 @@ export const getAllProducts = async (
 };
 
 export const createProduct = async (
-  req: Request,
+  req: Request & { files?: CustomFiles },
   res: Response,
   next: NextFunction
 ) => {
-  // @ts-ignore
-  const overViewImagePath = req.files?.overview_img_url[0].filename || "";
-  // @ts-ignore
-  const images = req.files?.images?.map((image) => image.filename) || [];
   try {
     const errors = validationResult(req);
+    console.log(errors);
     if (!errors.isEmpty()) {
       res.status(400).json({ errors: errors.array() });
       return;
     }
+
+    const {
+      overviewImagePath,
+      overviewImageBuffer,
+      overviewDatabasePath,
+      imagesPaths,
+      imagesDatabasePaths,
+      imagesBuffers,
+    } = await handlefileUpload(req);
+
+    const imagesPathsAsStringArray: string[] = imagesPaths as string[];
+    const imagesBuffersAsBufferArray: Buffer[] = imagesBuffers as Buffer[];
+
     const product = new Product(
       0,
       req.body.name,
       req.body.description,
       +req.body.price,
       +req.body.stock,
-      overViewImagePath,
-      images,
+      overviewDatabasePath,
+      imagesDatabasePaths as string[],
       +req.body.category_id
     );
-    const result = await product.createProduct();
-    res.status(201).json({ message: "Product created successfully", result });
+    await product.createProduct();
+
+    saveImage([
+      { imagePath: overviewImagePath, buffer: overviewImageBuffer },
+      ...imagesBuffersAsBufferArray.map((buffer, index) => ({
+        imagePath: imagesPathsAsStringArray[index],
+        buffer,
+      })),
+    ]);
+
+    res.status(201).json({ message: "Product created successfully" });
   } catch (err: any) {
     HTTPError.handleControllerError(err, next);
   }

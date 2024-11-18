@@ -1,6 +1,11 @@
 import { NextFunction } from "express";
 
-export type ErrorType = "Model" | "Controller" | "Service" | "Server";
+export type ErrorType =
+  | "Model"
+  | "Controller"
+  | "Service"
+  | "Server"
+  | "Middelware";
 
 export default class HTTPError extends Error {
   constructor(public status: number, message: string, public type?: ErrorType) {
