@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import e, { NextFunction, Request, Response } from "express";
 import HTTPError, { ErrorType } from "../utils/HTTPError";
 
 import Product from "../Models/Product";
@@ -6,6 +6,7 @@ import { clearImage } from "../utils/fns";
 import { validationResult } from "express-validator";
 import { CustomFiles } from "../types";
 import { handlefileUpload, saveImage } from "../middlewares/multer";
+import Cart from "../Models/Cart";
 
 export const getAllProducts = async (
   req: Request,
@@ -133,17 +134,93 @@ export const deleteProduct = async (
     const product = new Product(productId);
     const result = (await product.deleteProduct()) as Product;
     await clearImage(result.overview_img_url);
-    console.log("hi");
-    console.log(product);
     result.images.forEach(async (image) => {
       console.log(image);
       await clearImage(image);
     });
-    console.log("hi");
     res.status(200).json({
       message: "Product deleted successfully",
       result,
     });
+  } catch (err: any) {
+    HTTPError.handleControllerError(err, next);
+  }
+};
+
+export const getCartItems = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const cartItems = await Cart.getCartByUserId(req.userId as number);
+    res.status(200).json({ cartItems });
+  } catch (err: any) {
+    HTTPError.handleControllerError(err, next);
+  }
+};
+
+export const addToCart = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { productId, quantity } = req.body;
+    const cart = new Cart(undefined, req.userId, productId, quantity);
+    await cart.createCart();
+    res.status(201).json({ message: "Product added to cart successfully" });
+  } catch (err: any) {
+    HTTPError.handleControllerError(err, next);
+  }
+};
+
+export const updateQuantityInCart = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const id = Number(req.params.id);
+    const { quantity } = req.body;
+    const cart = new Cart(id, req.userId, quantity);
+    await cart.updateQuantity();
+    res.status(200).json({ message: "Product quantity updated successfully" });
+  } catch (err: any) {
+    HTTPError.handleControllerError(err, next);
+  }
+};
+
+export const removeItemFromCart = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      throw new HTTPError(400, "Invalid cart ID");
+    }
+    const cart = new Cart(id, req.userId as number);
+    await cart.deleteOneFromCart();
+    res.status(200).json({ message: "Product removed from cart successfully" });
+  } catch (err: any) {
+    HTTPError.handleControllerError(err, next);
+  }
+};
+export const removeAllFromCart = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      throw new HTTPError(400, "Invalid cart ID");
+    }
+    const cart = new Cart(undefined, req.userId as number);
+    await cart.deleteAllFromCart();
+    res.status(200).json({ message: "Product removed from cart successfully" });
   } catch (err: any) {
     HTTPError.handleControllerError(err, next);
   }

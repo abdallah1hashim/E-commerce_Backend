@@ -1,10 +1,15 @@
 import { NextFunction, Request, Response, Router } from "express";
 import {
+  addToCart,
   createProduct,
   deleteProduct,
   getAllProducts,
+  getCartItems,
   getProductById,
+  removeAllFromCart,
+  removeItemFromCart,
   updateProduct,
+  updateQuantityInCart,
 } from "../controllers/shop";
 import { ProductValidators } from "../validators/product";
 import { isAdminORStaff, isAutenticated } from "../middlewares/isAuth";
@@ -35,5 +40,11 @@ router.delete(
   isAdminORStaff,
   deleteProduct
 );
+
+router.get("/cart", isAutenticated, getCartItems);
+router.post("/cart", isAutenticated, addToCart);
+router.delete("/cart", isAutenticated, removeAllFromCart);
+router.put("/cart/:id", isAutenticated, updateQuantityInCart);
+router.delete("/cart/:id", isAutenticated, removeItemFromCart);
 
 export default router;
