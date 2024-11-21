@@ -14,12 +14,42 @@ export default class Cart {
     this.quantity = quantity;
   }
 
-  static async getCartByUserId(user_id: number) {
+  async getCartByUserId() {
     try {
       const res = await pool.query("SELECT * FROM cart WHERE user_id = $1", [
-        user_id,
+        this.user_id,
       ]);
+      if (res.rows.length === 0) {
+        throw new HTTPError(404, "Cart not found");
+      }
       return res.rows as Cart[];
+    } catch (error: any) {
+      HTTPError.handleModelError(error);
+    }
+  }
+  async getCartByProductId() {
+    try {
+      const res = await pool.query("SELECT * FROM cart WHERE product_id = $1", [
+        this.product_id,
+      ]);
+      if (res.rows.length === 0) {
+        throw new HTTPError(404, "Cart not found");
+      }
+      return res.rows[0] as Cart;
+    } catch (error: any) {
+      HTTPError.handleModelError(error);
+    }
+  }
+  async getCartByProductIdAndUserId() {
+    try {
+      const res = await pool.query(
+        "SELECT * FROM cart WHERE product_id = $1 AND user_id = $2",
+        [this.product_id, this.user_id]
+      );
+      if (res.rows.length === 0) {
+        throw new HTTPError(404, "Cart not found");
+      }
+      return res.rows[0] as Cart;
     } catch (error: any) {
       HTTPError.handleModelError(error);
     }
@@ -42,6 +72,9 @@ export default class Cart {
         "UPDATE cart SET quantity = $3 WHERE id = $1 AND user_id = $2 RETURNING *",
         [this.id, this.user_id, this.quantity]
       );
+      if (res.rows.length === 0) {
+        throw new HTTPError(404, "Cart not found");
+      }
       return res.rows[0] as Cart;
     } catch (error: any) {
       HTTPError.handleModelError(error);

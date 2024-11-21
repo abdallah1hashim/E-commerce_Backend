@@ -14,8 +14,8 @@ import {
 import { ProductValidators } from "../validators/product";
 import { isAdminORStaff, isAutenticated } from "../middlewares/isAuth";
 import uploadMiddleware from "../middlewares/multer";
-import { body } from "express-validator";
 import cartValidator, { cartQuantityValidator } from "../validators/cart";
+import { body } from "express-validator";
 
 const router = Router();
 
@@ -46,12 +46,17 @@ router.delete(
 router.get("/cart", isAutenticated, getCartItems);
 router.post("/cart", isAutenticated, cartValidator, addToCart);
 router.delete("/cart", isAutenticated, removeAllFromCart);
-router.put(
-  "/cart/:id",
+router.delete(
+  "/cart",
   isAutenticated,
-  cartQuantityValidator,
-  updateQuantityInCart
+  [body("id").notEmpty().isInt({ min: 1 }).withMessage("Invalid cart ID")],
+  removeItemFromCart
 );
-router.delete("/cart/:id", isAutenticated, removeItemFromCart);
+// router.put(
+//   "/cart/:id",
+//   isAutenticated,
+//   cartQuantityValidator,
+//   updateQuantityInCart
+// );
 
 export default router;

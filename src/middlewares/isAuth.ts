@@ -25,7 +25,6 @@ export const isAutenticated = (
 
   req.userId = decodedToken.id;
   req.userRole = decodedToken.role;
-  console.log("decodedToken: ", decodedToken);
   next();
 };
 
@@ -34,7 +33,6 @@ export const isAdmin = async (
   res: Response,
   next: NextFunction
 ) => {
-  //@ts-ignore
   req.userRole === "admin"
     ? next()
     : res.status(401).json({ message: "Unauthorized" });
@@ -44,7 +42,6 @@ export const isAdminORStaff = async (
   res: Response,
   next: NextFunction
 ) => {
-  //@ts-ignore
   req.userRole === "admin" || req.userRole === "staff"
     ? next()
     : res.status(401).json({ message: "Unauthorized" });

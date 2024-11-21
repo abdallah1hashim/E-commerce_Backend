@@ -5,7 +5,8 @@ export type ErrorType =
   | "Controller"
   | "Service"
   | "Server"
-  | "Middelware";
+  | "Middelware"
+  | "Database";
 
 export default class HTTPError extends Error {
   constructor(public status: number, message: string, public type?: ErrorType) {
@@ -18,6 +19,13 @@ export default class HTTPError extends Error {
       err.status || 500,
       err.message || "Internal Server Error",
       err.type || "Model"
+    );
+  }
+  static handleDBError(err: any) {
+    throw new HTTPError(
+      err.status || 500,
+      err.message || "Internal Server Error",
+      err.type || "Database"
     );
   }
   static handleServiceError(err: any) {

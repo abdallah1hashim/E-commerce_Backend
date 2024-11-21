@@ -153,7 +153,8 @@ export const getCartItems = async (
   next: NextFunction
 ) => {
   try {
-    const cartItems = await Cart.getCartByUserId(req.userId as number);
+    const cart = new Cart(undefined, req.userId);
+    const cartItems = await cart.getCartByUserId();
     res.status(200).json({ cartItems });
   } catch (err: any) {
     HTTPError.handleControllerError(err, next);
@@ -166,17 +167,54 @@ export const addToCart = async (
   next: NextFunction
 ) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+      return;
+    }
+
     const { productId, quantity } = req.body;
+
+    // Get product details
     const product = new Product(productId);
     const productResult = (await product.getProductById()) as Product;
-    if (productResult.stock === 0) {
+
+    // Check if the product is available in stock
+    if (!productResult || productResult.stock === 0) {
       throw new HTTPError(400, "Product out of stock");
     }
-    if (productResult.stock < quantity) {
-      throw new HTTPError(400, "Not enough stock");
-    }
-    console.log("userId: ", req.userId);
+
+    // Create or fetch the cart for the user and product
     const cart = new Cart(undefined, req.userId, productId, quantity);
+    const cartResult = (await cart.getCartByProductIdAndUserId()) as Cart;
+
+    if (cartResult) {
+      if (quantity + cartResult.quantity > productResult.stock) {
+        throw new HTTPError(400, "Not enough stock available");
+      }
+      if (quantity + cartResult.quantity > Number(process.env.MAX_QUANTITY)) {
+        throw new HTTPError(400, "Maximum quantity exceeded");
+      }
+      cart.id = cartResult.id;
+
+      cart.quantity = cartResult.quantity + quantity;
+      console.log(
+        "id:",
+        cart.id,
+        "cart quantity: ",
+        cart.quantity,
+        "user_id: ",
+        cart.user_id
+      );
+      await cart.updateQuantity();
+      res
+        .status(200)
+        .json({ message: "Product quantity updated successfully" });
+      return;
+    }
+    if (quantity > productResult.stock) {
+      throw new HTTPError(400, "Not enough stock available");
+    }
     await cart.createCart();
     res.status(201).json({ message: "Product added to cart successfully" });
   } catch (err: any) {
@@ -190,8 +228,12 @@ export const updateQuantityInCart = async (
   next: NextFunction
 ) => {
   try {
-    const id = Number(req.params.id);
-    const { quantity } = req.body;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+      return;
+    }
+    const { id, quantity } = req.body;
     const cart = new Cart(id, req.userId, quantity);
     await cart.updateQuantity();
     res.status(200).json({ message: "Product quantity updated successfully" });
@@ -206,7 +248,12 @@ export const removeItemFromCart = async (
   next: NextFunction
 ) => {
   try {
-    const id = Number(req.params.id);
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+      return;
+    }
+    const id = Number(req.body.id);
     if (isNaN(id)) {
       throw new HTTPError(400, "Invalid cart ID");
     }
@@ -223,10 +270,6 @@ export const removeAllFromCart = async (
   next: NextFunction
 ) => {
   try {
-    const id = Number(req.params.id);
-    if (isNaN(id)) {
-      throw new HTTPError(400, "Invalid cart ID");
-    }
     const cart = new Cart(undefined, req.userId as number);
     await cart.deleteAllFromCart();
     res.status(200).json({ message: "Product removed from cart successfully" });
