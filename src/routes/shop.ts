@@ -14,6 +14,8 @@ import {
 import { ProductValidators } from "../validators/product";
 import { isAdminORStaff, isAutenticated } from "../middlewares/isAuth";
 import uploadMiddleware from "../middlewares/multer";
+import { body } from "express-validator";
+import cartValidator, { cartQuantityValidator } from "../validators/cart";
 
 const router = Router();
 
@@ -42,9 +44,14 @@ router.delete(
 );
 
 router.get("/cart", isAutenticated, getCartItems);
-router.post("/cart", isAutenticated, addToCart);
+router.post("/cart", isAutenticated, cartValidator, addToCart);
 router.delete("/cart", isAutenticated, removeAllFromCart);
-router.put("/cart/:id", isAutenticated, updateQuantityInCart);
+router.put(
+  "/cart/:id",
+  isAutenticated,
+  cartQuantityValidator,
+  updateQuantityInCart
+);
 router.delete("/cart/:id", isAutenticated, removeItemFromCart);
 
 export default router;

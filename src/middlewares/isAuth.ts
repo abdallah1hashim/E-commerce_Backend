@@ -1,7 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { verify } from "jsonwebtoken";
+import jsonwebtoken from "jsonwebtoken";
 
-export const isAutenticated = async (
+export const isAutenticated = (
   req: Request,
   res: Response,
   next: NextFunction
@@ -13,20 +14,18 @@ export const isAutenticated = async (
     return;
   }
   try {
-    console.log(process.env.JWT_SECRET);
     decodedToken = verify(
       token.split(" ")[1],
       process.env.JWT_SECRET_KEY as string
-    );
+    ) as any;
   } catch (err) {
     res.status(401).json({ message: "Invalid token" });
     return;
   }
 
-  //@ts-ignore
-  req.userId = decodedToken.user_id;
-  //@ts-ignore
+  req.userId = decodedToken.id;
   req.userRole = decodedToken.role;
+  console.log("decodedToken: ", decodedToken);
   next();
 };
 

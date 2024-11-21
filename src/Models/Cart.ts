@@ -16,7 +16,7 @@ export default class Cart {
 
   static async getCartByUserId(user_id: number) {
     try {
-      const res = await pool.query("SELECT * FROM carts WHERE user_id = $1", [
+      const res = await pool.query("SELECT * FROM cart WHERE user_id = $1", [
         user_id,
       ]);
       return res.rows as Cart[];
@@ -28,7 +28,7 @@ export default class Cart {
   async createCart() {
     try {
       const res = await pool.query(
-        "INSERT INTO carts (user_id, product_id, quantity) VALUES ($1, $2, $3) RETURNING *",
+        "INSERT INTO cart (user_id, product_id, quantity) VALUES ($1, $2, $3) RETURNING *",
         [this.user_id, this.product_id, this.quantity]
       );
       return res.rows[0] as Cart;
@@ -39,7 +39,7 @@ export default class Cart {
   async updateQuantity() {
     try {
       const res = await pool.query(
-        "UPDATE carts SET quantity = $3 WHERE id = $1 AND user_id = $2 RETURNING *",
+        "UPDATE cart SET quantity = $3 WHERE id = $1 AND user_id = $2 RETURNING *",
         [this.id, this.user_id, this.quantity]
       );
       return res.rows[0] as Cart;
@@ -50,7 +50,7 @@ export default class Cart {
   async deleteOneFromCart() {
     try {
       const res = await pool.query(
-        "DELETE FROM carts WHERE id = $1 AND user_id = $2 RETURNING *",
+        "DELETE FROM cart WHERE id = $1 AND user_id = $2 RETURNING *",
         [this.id, this.user_id]
       );
       if (res.rows.length === 0) {

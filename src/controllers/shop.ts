@@ -167,6 +167,15 @@ export const addToCart = async (
 ) => {
   try {
     const { productId, quantity } = req.body;
+    const product = new Product(productId);
+    const productResult = (await product.getProductById()) as Product;
+    if (productResult.stock === 0) {
+      throw new HTTPError(400, "Product out of stock");
+    }
+    if (productResult.stock < quantity) {
+      throw new HTTPError(400, "Not enough stock");
+    }
+    console.log("userId: ", req.userId);
     const cart = new Cart(undefined, req.userId, productId, quantity);
     await cart.createCart();
     res.status(201).json({ message: "Product added to cart successfully" });
