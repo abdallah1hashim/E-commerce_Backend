@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import multer, { diskStorage, memoryStorage } from "multer";
 import path from "path";
 import fs from "fs/promises";
-import { CustomFiles, MulterFile } from "../types";
+import { CustomFiles, MulterFile } from "../types/types";
 import HTTPError from "../utils/HTTPError";
 
 const inMemoryStorage = memoryStorage();

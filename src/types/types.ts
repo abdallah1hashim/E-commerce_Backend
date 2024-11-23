@@ -14,3 +14,9 @@ export type CustomFiles = {
   overview_img_url?: MulterFile[];
   images?: MulterFile[];
 };
+
+export type orderItemsData = {
+  product_id: number;
+  quantity: number;
+  price_per_item: number | undefined;
+};

@@ -4,7 +4,7 @@ import HTTPError, { ErrorType } from "../utils/HTTPError";
 import Product from "../Models/Product";
 import { clearImage } from "../utils/fns";
 import { validationResult } from "express-validator";
-import { CustomFiles } from "../types";
+import { CustomFiles } from "../types/types";
 import { handlefileUpload, saveImage } from "../middlewares/multer";
 import Cart from "../Models/Cart";
 

@@ -6,7 +6,8 @@ export default class Cart {
     public id?: number,
     public user_id?: number,
     public product_id?: number,
-    public quantity?: number
+    public quantity?: number,
+    public price?: number
   ) {
     this.id = id;
     this.user_id = user_id;
