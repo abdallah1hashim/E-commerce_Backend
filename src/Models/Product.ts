@@ -1,11 +1,6 @@
+import { PoolClient } from "pg";
 import HTTPError from "../utils/HTTPError";
 import Pool from "../utils/ds";
-import ProductImages from "./ProductImages";
-
-type Images = {
-  id: number;
-  image_url: string;
-};
 
 export default class Product {
   private created_at?: Date;
@@ -18,7 +13,6 @@ export default class Product {
     public price: number = 0,
     public stock: number = 0,
     public overview_img_url: string = "",
-    public images: string[] = [],
     public category_id?: number
   ) {
     this.id = id;
@@ -27,7 +21,6 @@ export default class Product {
     this.price = price;
     this.stock = stock;
     this.overview_img_url = overview_img_url;
-    this.images = images;
     this.category_id = category_id;
   }
 
@@ -59,10 +52,9 @@ export default class Product {
     }
   }
 
-  async getProductById() {
+  async getById(client?: PoolClient) {
     try {
-      const results = await Pool.query(
-        `SELECT 
+      const query = `SELECT 
           p.*, 
           c.name as category 
           FROM 
@@ -72,17 +64,10 @@ export default class Product {
           WHERE 
             p.id = $1
           limit 1
-        `,
-        [this.id]
-      );
+        `;
+      const results = await (client || Pool).query(query, [this.id]);
       if (results.rows.length === 0) {
-        throw new HTTPError(404, "Product not found");
-      }
-      const images = await ProductImages.getImagesbyProductId(
-        this.id as number
-      );
-      if (images) {
-        return { product: results.rows[0], images: images };
+        return null;
       }
       return results.rows[0];
     } catch (error: any) {
@@ -90,7 +75,7 @@ export default class Product {
     }
   }
 
-  async createProduct() {
+  async create(client: PoolClient) {
     try {
       const results = await Pool.query(
         "INSERT INTO product (name, description, price, stock, overview_img_url, category_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
@@ -104,20 +89,8 @@ export default class Product {
         ]
       );
       if (results.rows.length === 0) {
-        throw new HTTPError(404, "Product not created");
+        return null;
       }
-      const resultId = results.rows[0].id;
-      if (this.images.length > 0) {
-        this.images.forEach(async (image) => {
-          await Pool.query(
-            "INSERT INTO product_images (product_id, image_url) VALUES ($1, $2)",
-            [resultId, image]
-          );
-        });
-      }
-
-      results.rows[0].images = this.images;
-      results.rows[0] as Product;
       return results.rows[0] as Product;
     } catch (error: any) {
       HTTPError.handleModelError(error);

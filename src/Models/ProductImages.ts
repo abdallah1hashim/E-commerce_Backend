@@ -1,3 +1,4 @@
+import { PoolClient } from "pg";
 import pool from "../utils/ds";
 import HTTPError from "../utils/HTTPError";
 
@@ -12,13 +13,31 @@ export default class ProductImages {
     this.image_url = image_url;
   }
 
-  static async getImagesbyProductId(product_id: number) {
+  async getByProductId(client?: PoolClient) {
     try {
-      const res = await pool.query(
-        "SELECT id,image_url FROM product_images WHERE product_id = $1",
-        [product_id]
+      const results = await (client || pool).query(
+        "SELECT * FROM product_images WHERE product_id = $1",
+        [this.id]
       );
-      return res.rows as ProductImages[];
+      if (results.rows.length === 0) {
+        return null;
+      }
+      return results.rows as ProductImages[];
+    } catch (error: any) {
+      HTTPError.handleModelError(error);
+    }
+  }
+
+  async create(client: PoolClient) {
+    try {
+      const results = await client.query(
+        "INSERT INTO product_images (image_url, product_id) VALUES ($1, $2) RETURNING *",
+        [this.image_url, this.product_id]
+      );
+      if (results.rows.length === 0) {
+        return null;
+      }
+      return results.rows[0] as ProductImages;
     } catch (error: any) {
       HTTPError.handleModelError(error);
     }

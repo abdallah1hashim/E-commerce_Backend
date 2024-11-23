@@ -7,6 +7,8 @@ import { validationResult } from "express-validator";
 import { CustomFiles } from "../types/types";
 import { handlefileUpload, saveImage } from "../middlewares/multer";
 import Cart from "../Models/Cart";
+import ProductService from "../services/productService";
+import ProductImages from "../Models/ProductImages";
 
 export const getAllProducts = async (
   req: Request,
@@ -50,17 +52,15 @@ export const createProduct = async (
     const imagesPathsAsStringArray: string[] = imagesPaths as string[];
     const imagesBuffersAsBufferArray: Buffer[] = imagesBuffers as Buffer[];
 
-    const product = new Product(
-      0,
+    await ProductService.createProduct(
       req.body.name,
       req.body.description,
-      +req.body.price,
-      +req.body.stock,
+      req.body.price,
+      req.body.stock,
       overviewDatabasePath,
-      imagesDatabasePaths as string[],
-      +req.body.category_id
+      req.body.category_id,
+      imagesDatabasePaths
     );
-    await product.createProduct();
 
     saveImage([
       { imagePath: overviewImagePath, buffer: overviewImageBuffer },
@@ -86,8 +86,9 @@ export const getProductById = async (
     if (isNaN(productId)) {
       throw new HTTPError(400, "Invalid product ID");
     }
-    const product = new Product(productId);
-    const result = await product.getProductById();
+    const result = (await ProductService.getProductByIdWithImages(
+      productId
+    )) as Product & { images: ProductImages[] };
     res.status(200).json({ result });
   } catch (err: any) {
     HTTPError.handleControllerError(err, next);
@@ -111,7 +112,6 @@ export const updateProduct = async (
       +req.body.price,
       +req.body.stock,
       overViewImagePath,
-      images,
       +req.body.category_id
     );
     const result = await product.updateProduct();
@@ -132,11 +132,12 @@ export const deleteProduct = async (
       throw new HTTPError(400, "Invalid product ID");
     }
     const product = new Product(productId);
+    const productResult = new ProductImages(undefined, undefined, productId);
+    const images = (await productResult.getByProductId()) as ProductImages[];
     const result = (await product.deleteProduct()) as Product;
     await clearImage(result.overview_img_url);
-    result.images.forEach(async (image) => {
-      console.log(image);
-      await clearImage(image);
+    images.forEach(async (image) => {
+      await clearImage(image.image_url as string);
     });
     res.status(200).json({
       message: "Product deleted successfully",
@@ -177,7 +178,7 @@ export const addToCart = async (
 
     // Get product details
     const product = new Product(productId);
-    const productResult = (await product.getProductById()) as Product;
+    const productResult = (await product.getById()) as Product;
 
     // Check if the product is available in stock
     if (!productResult || productResult.stock === 0) {
