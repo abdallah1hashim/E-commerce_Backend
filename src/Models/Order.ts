@@ -15,9 +15,12 @@ export default class Order {
     this.status = status;
   }
 
-  static async getAll() {
+  static async getAll(userId?: number) {
     try {
-      const res = await pool.query("SELECT * FROM orders");
+      const query = userId
+        ? `SELECT * FROM orders WHERE user_id = $1`
+        : `SELECT * FROM orders`;
+      const res = await pool.query(query, [userId]);
       if (res.rows.length === 0) {
         throw new HTTPError(404, "Order not found");
       }
@@ -81,7 +84,7 @@ export default class Order {
       HTTPError.handleModelError(error);
     }
   }
-  async updateStatus(client: PoolClient) {
+  async updateStatus(client?: PoolClient) {
     try {
       const res = await pool.query(
         "UPDATE orders SET status = $2 WHERE id = $1 RETURNING *",
@@ -98,8 +101,8 @@ export default class Order {
   async delete() {
     try {
       const res = await pool.query(
-        "DELETE FROM orders WHERE id = $1 AND user_id = $2 RETURNING *",
-        [this.id, this.user_id]
+        "DELETE FROM orders WHERE id = $1  RETURNING *",
+        [this.id]
       );
       if (res.rows.length === 0) {
         throw new HTTPError(404, "Order not found");

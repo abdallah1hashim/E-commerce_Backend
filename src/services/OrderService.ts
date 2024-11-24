@@ -66,18 +66,32 @@ export default class OrderService {
       client.release();
     }
   }
-  static async getOrderById(orderId: number) {
+  static async getUserOrders(userId: number) {
+    try {
+      const order = new Order(undefined, userId);
+      return (await order.getByUserId()) as Order[];
+    } catch (error) {
+      HTTPError.handleServiceError(error);
+    }
+  }
+  static async getOrderById(orderId: number, userId?: number) {
     const client = await pool.connect();
     try {
       const order = new Order(orderId);
-      const orderItem = new OrderItem(undefined, orderId);
+      const retrievedOrder = (await order.getById(client)) as Order;
 
-      if (!order) {
+      if (!retrievedOrder || !retrievedOrder.id) {
         throw new HTTPError(404, `Order with ID ${orderId} not found`);
       }
+      if (userId && retrievedOrder.user_id !== userId) {
+        throw new HTTPError(403, "You are not authorized to view this order");
+      }
+      const orderItems = new OrderItem(undefined, orderId);
+      const retrievedOrderItems = await orderItems.getByOrderId(client);
+
       return {
-        ...((await order.getById(client)) as Order),
-        orderItems: (await orderItem.getByOrderId(client)) as OrderItem[],
+        ...retrievedOrder,
+        orderItems: retrievedOrderItems,
       };
     } catch (error) {
       HTTPError.handleServiceError(error);
@@ -102,6 +116,18 @@ export default class OrderService {
       HTTPError.handleServiceError(error);
     } finally {
       client.release();
+    }
+  }
+  static async updateOrderStatus(orderId: number, status: string) {
+    try {
+      const order = new Order(orderId, undefined, undefined, status);
+      const updatedOrder = await order.updateStatus();
+      if (!updatedOrder || !updatedOrder.id) {
+        throw new HTTPError(404, `Order with ID ${orderId} not found`);
+      }
+      return updatedOrder;
+    } catch (error) {
+      HTTPError.handleServiceError(error);
     }
   }
 }

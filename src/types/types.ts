@@ -1,3 +1,6 @@
+import Order from "../Models/Order";
+import OrderItem from "../Models/OrderItem";
+
 export interface MulterFile {
   fieldname: string;
   originalname: string;
@@ -20,3 +23,9 @@ export type orderItemsData = {
   quantity: number;
   price_per_item: number | undefined;
 };
+
+export type DetailedOrder = Order & {
+  orderItems: OrderItem[];
+};
+
+export type UserRole = "Admin" | "Staff" | "Supplier" | "Customer";
