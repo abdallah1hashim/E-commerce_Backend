@@ -29,3 +29,5 @@ export type DetailedOrder = Order & {
 };
 
 export type UserRole = "Admin" | "Staff" | "Supplier" | "Customer";
+
+export type ResourceType = "product" | "cart" | "order";

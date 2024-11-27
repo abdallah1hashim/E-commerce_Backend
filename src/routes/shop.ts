@@ -12,50 +12,108 @@ import {
   updateQuantityInCart,
 } from "../controllers/shop";
 import { ProductValidators } from "../validators/product";
-import { isAdminORStaff, isAutenticated } from "../middlewares/isAuth";
+import { authorize, isAutenticated, isCustomer } from "../middlewares/isAuth";
 import uploadMiddleware from "../middlewares/multer";
 import cartValidator, {
   cartIdValidator,
   cartQuantityValidator,
 } from "../validators/cart";
 import { body } from "express-validator";
+import { Permissions } from "../rbacConfig";
+import { checkOwnership } from "../middlewares/checkOwnership";
 
 const router = Router();
 
+// Product routes
 router.get("/products", getAllProducts);
+router.get("/products/:productId", getProductById);
+
 router.post(
   "/products",
   isAutenticated,
-  isAdminORStaff,
+  authorize(Permissions.CREATE_PRODUCT),
   uploadMiddleware,
   ProductValidators,
   createProduct
 );
-router.get("/products/:productId", getProductById);
 router.put(
   "/products/:productId",
   isAutenticated,
-  isAdminORStaff,
+  authorize(Permissions.UPDATE_PRODUCT),
   ProductValidators,
   updateProduct
 );
 router.delete(
   "/products/:productId",
   isAutenticated,
-  isAdminORStaff,
+  authorize(Permissions.DELETE_PRODUCT),
   deleteProduct
 );
 
-router.get("/cart", isAutenticated, getCartItems);
-router.post("/cart", isAutenticated, cartValidator, addToCart);
-router.delete("/cart", isAutenticated, removeAllFromCart);
+// Cart routes
+router.get(
+  "/cart",
+  isAutenticated,
+  authorize(Permissions.VIEW_OWN_CART),
+  getCartItems
+);
+router.post(
+  "/cart",
+  isAutenticated,
+  authorize(Permissions.CREATE_OWN_CART),
+  cartValidator,
+  addToCart
+);
+router.delete(
+  "/cart",
+  isAutenticated,
+  authorize(Permissions.DELETE_OWN_CART),
+  removeAllFromCart
+);
 router.put(
   "/cart",
   isAutenticated,
+  authorize(Permissions.UPDATE_OWN_CART),
   cartIdValidator,
+  checkOwnership("cart"),
   cartQuantityValidator,
   updateQuantityInCart
 );
-router.delete("/cart", isAutenticated, cartIdValidator, removeItemFromCart);
+router.delete(
+  "/cart",
+  isAutenticated,
+  cartIdValidator,
+  checkOwnership("cart"),
+  removeItemFromCart
+);
+
+// order routes
+
+// admin
+router.post(
+  "/admin/order",
+  isAutenticated,
+  authorize(Permissions.CREATE_ORDER)
+);
+router.post(
+  "/admin/order",
+  isAutenticated,
+  authorize(Permissions.DELETE_ORDER)
+);
+
+// staff or higher
+router.get("/order", isAutenticated, authorize(Permissions.VIEW_ALL_ORDERS));
+router.put("/order", isAutenticated, authorize(Permissions.UPDATE_ORDER));
+
+// customer
+router.get("/order", isAutenticated, authorize(Permissions.VIEW_OWN_ORDERS));
+router.post("/order", isAutenticated, authorize(Permissions.CREATE_OWN_ORDER));
+router.put("/order", isAutenticated, authorize(Permissions.UPDATE_OWN_ORDER));
+
+// user routes
+router.get("/user", isAutenticated, authorize(Permissions.VIEW_ALL_USERS));
+router.post("/user", isAutenticated, authorize(Permissions.UPDATE_OWN_USER));
+router.put("/user", isAutenticated, authorize(Permissions.UPDATE_USER));
+router.delete("/user", isAutenticated, authorize(Permissions.DELETE_USER));
 
 export default router;

@@ -29,24 +29,6 @@ export const isAutenticated = (
   next();
 };
 
-export const isAdmin = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  req.userRole === "admin"
-    ? next()
-    : res.status(401).json({ message: "Unauthorized" });
-};
-export const isAdminORStaff = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  req.userRole === "admin" || req.userRole === "staff"
-    ? next()
-    : res.status(401).json({ message: "Unauthorized" });
-};
 export const authorize = (requiredPermission: string) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -57,7 +39,8 @@ export const authorize = (requiredPermission: string) => {
 
       const permissions = Roles[role];
       if (!permissions || !permissions.includes(requiredPermission)) {
-        return res.status(403).json({ message: "Forbidden: Access denied" });
+        res.status(403).json({ message: "Forbidden: Access denied" });
+        return;
       }
 
       next(); // User has the required permission
@@ -65,4 +48,13 @@ export const authorize = (requiredPermission: string) => {
       next(err);
     }
   };
+};
+
+export const isCustomer = (req: Request, res: Response, next: NextFunction) => {
+  if (req.userRole !== "customer") {
+    res.status(403).json({ message: "Forbidden: Access denied" });
+    return;
+  }
+
+  next();
 };
