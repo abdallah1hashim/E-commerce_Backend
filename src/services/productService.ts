@@ -6,6 +6,17 @@ import HTTPError from "../utils/HTTPError";
 type ProductWithImages = Product & { images: ProductImages[] };
 
 export default class ProductService {
+  static async findById(id: number): Promise<Product> {
+    const client = await pool.connect();
+    try {
+      const product = new Product(id);
+      return (await product.getById(client)) as Product;
+    } catch (error) {
+      throw HTTPError.handleServiceError(error);
+    } finally {
+      client.release();
+    }
+  }
   static async getProductByIdWithImages(
     id: number
   ): Promise<ProductWithImages | void> {
@@ -14,7 +25,7 @@ export default class ProductService {
       const product = new Product(id);
       const retrievedProduct = await product.getById(client);
       const productImages = new ProductImages(undefined, undefined, id);
-      const retrievedimages = (await productImages.getByProductId(
+      const retrievedimages = (await productImages.findByProductId(
         client
       )) as ProductImages[];
       return { ...retrievedProduct, images: retrievedimages };
@@ -61,6 +72,43 @@ export default class ProductService {
       }
       await client.query("COMMIT");
       return { ...createdProduct, images: retrievedimages };
+    } catch (error) {
+      client.query("ROLLBACK");
+      return HTTPError.handleServiceError(error);
+    } finally {
+      client.release();
+    }
+  }
+  static async updateOverViewImage(
+    id: number,
+    overview_img_url: string | null
+  ): Promise<Product> {
+    try {
+      const product = new Product(
+        id,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        overview_img_url
+      );
+      return (await product.updateOverView()) as Product;
+    } catch (error) {
+      throw HTTPError.handleServiceError(error);
+    }
+  }
+  static async createProductImage(Productid: number, image_url: string[]) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const retrievedimages = await Promise.all(
+        image_url.map(async (image) => {
+          const Image = new ProductImages(undefined, image, Productid);
+          return await Image.create(client);
+        })
+      );
+      await client.query("COMMIT");
+      return retrievedimages;
     } catch (error) {
       client.query("ROLLBACK");
       return HTTPError.handleServiceError(error);

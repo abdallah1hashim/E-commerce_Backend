@@ -2,54 +2,48 @@ import { NextFunction, Request, Response } from "express";
 import multer, { diskStorage, memoryStorage } from "multer";
 import path from "path";
 import fs from "fs/promises";
-import { CustomFiles, MulterFile } from "../types/types";
 import HTTPError from "../utils/HTTPError";
+import { CustomFiles } from "../types/express";
 
 const inMemoryStorage = memoryStorage();
 
-// const fileStorage = diskStorage({
-//   destination: (req, file, cb) => {
-//     const imagesPath = path.join(__dirname, "..", "images");
-//     cb(null, imagesPath);
-//   },
-//   filename: (req, file, cb) => {
-//     cb(null, Date.now() + "-" + file.originalname);
-//   },
-// });
-
-export const handlefileUpload = async (
+export const handleOverviewImage = async (
   req: Request & { files?: CustomFiles }
 ) => {
   const overviewImage = req.files?.overview_img_url?.[0];
   if (!overviewImage) {
-    throw new HTTPError(400, "Overview image is required");
+    return null;
   }
-  const overviewImageOrignalName =
-    Date.now() +
-    "-" +
-    Math.random().toString(36) +
-    "-" +
-    overviewImage.originalname;
-  console.log(overviewImageOrignalName);
+  const overviewImageOrignalName = overviewImage.originalname;
   const overviewImageBuffer = overviewImage.buffer;
   const overviewImagePath = path.join(
     __dirname,
     "..",
     "..",
     "images",
-    overviewImageOrignalName
+    Date.now() +
+      "-" +
+      Math.random().toString(36) +
+      "-" +
+      overviewImage.originalname
   );
   const overviewDatabasePath = `/images/${overviewImageOrignalName}`;
-  // Collect additional images
+  return {
+    overviewImageOrignalName,
+    overviewDatabasePath,
+    overviewImageBuffer,
+    overviewImagePath,
+  };
+};
+export const handleImages = async (req: Request & { files?: CustomFiles }) => {
   const imagesOriginal =
     req.files?.images?.map((file) => {
       return file.originalname;
     }) || [];
   if (imagesOriginal.length === 0) {
-    throw new HTTPError(400, "At least one image is required");
+    return null;
   }
   const imagesPaths = req.files?.images?.map((file) => {
-    console.log(file.originalname);
     return path.join(
       __dirname,
       "..",
@@ -65,16 +59,28 @@ export const handlefileUpload = async (
     req.files?.images?.map((file) => {
       return `/images/${file.originalname}`;
     }) || [];
+
   return {
-    overviewImageOrignalName,
-    overviewDatabasePath,
-    overviewImageBuffer,
-    overviewImagePath,
     imagesOriginal,
     imagesDatabasePaths,
     imagesPaths,
     imagesBuffers,
   };
+};
+export const handleImage = async (req: Request & { files?: CustomFiles }) => {
+  const image = req.files?.images?.[0];
+  if (!image) {
+    return null;
+  }
+  const imageOrignalName = image.originalname;
+  const imageBuffer = image.buffer;
+  const imagePath = path.join(
+    __dirname,
+    "..",
+    "..",
+    "images",
+    Date.now() + "-" + Math.random().toString(36) + "-" + image.originalname
+  );
 };
 export const saveImage = async (
   files: { imagePath: string; buffer: Buffer }[]
@@ -113,5 +119,10 @@ export const uploadMiddleware = multer({
   { name: "overview_img_url", maxCount: 1 },
   { name: "images", maxCount: 5 },
 ]);
+export const uploadToUpdateOverviewImgMiddleware = multer({
+  storage: inMemoryStorage,
+  fileFilter: fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+}).fields([{ name: "overview_img_url", maxCount: 1 }]);
 
 export default uploadMiddleware;

@@ -1,11 +1,17 @@
 import { NextFunction, Request, Response } from "express";
 import HTTPError, { ErrorType } from "../utils/HTTPError";
 import { validationResult } from "express-validator";
+import fs from "fs/promises";
 
 import Product from "../Models/Product";
 import { clearImage } from "../utils/fns";
-import { CustomFiles, DetailedOrder, UserRole } from "../types/types";
-import { handlefileUpload, saveImage } from "../middlewares/multer";
+import { DetailedOrder, UserRole } from "../types/types";
+import {
+  handleImage,
+  handleImages,
+  handleOverviewImage,
+  saveImage,
+} from "../middlewares/multer";
 import Cart from "../Models/Cart";
 import ProductService from "../services/productService";
 import ProductImages from "../Models/ProductImages";
@@ -21,8 +27,9 @@ export const getAllProducts = async (
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const offset = (page - 1) * limit;
+    const search = req.query.search as string;
 
-    const products = await Product.getAllProducts(limit, offset);
+    const products = await Product.getAll(limit, offset, search);
     res.status(200).json({ products });
   } catch (err: any) {
     HTTPError.handleControllerError(err, next);
@@ -30,7 +37,7 @@ export const getAllProducts = async (
 };
 
 export const createProduct = async (
-  req: Request & { files?: CustomFiles },
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
@@ -42,14 +49,14 @@ export const createProduct = async (
       return;
     }
 
-    const {
-      overviewImagePath,
-      overviewImageBuffer,
-      overviewDatabasePath,
-      imagesPaths,
-      imagesDatabasePaths,
-      imagesBuffers,
-    } = await handlefileUpload(req);
+    const resImg = await handleOverviewImage(req);
+    const resImgs = await handleImages(req);
+    if (!resImg || !resImgs) {
+      throw new HTTPError(400, "Images are required");
+    }
+    const { overviewImageBuffer, overviewImagePath, overviewDatabasePath } =
+      resImg;
+    const { imagesPaths, imagesDatabasePaths, imagesBuffers } = resImgs;
 
     const imagesPathsAsStringArray: string[] = imagesPaths as string[];
     const imagesBuffersAsBufferArray: Buffer[] = imagesBuffers as Buffer[];
@@ -102,22 +109,166 @@ export const updateProduct = async (
   next: NextFunction
 ) => {
   try {
-    // @ts-ignore
-    const overViewImagePath = req.files?.overview_img_url[0].filename || "";
-    // @ts-ignore
-    const images = req.files?.images?.map((image) => image.filename) || [];
-
     const product = new Product(
       +req.params.productId,
       req.body.name,
       req.body.description,
       +req.body.price,
       +req.body.stock,
-      overViewImagePath,
+      undefined,
       +req.body.category_id
     );
-    const result = await product.updateProduct();
-    res.status(200).json({ message: "Product updated successfully", result });
+    const result = await product.update();
+    res.status(200).json({ message: "Product updated successfully" });
+  } catch (err: any) {
+    HTTPError.handleControllerError(err, next);
+  }
+};
+
+export const updateProductOverViewImage = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+      return;
+    }
+    const resImg = await handleOverviewImage(req);
+    if (!resImg) {
+      throw new HTTPError(400, "Image is required");
+    }
+    const { overviewImageBuffer, overviewImagePath, overviewDatabasePath } =
+      resImg;
+
+    const retrievedProduct = await ProductService.findById(
+      +req.params.productId
+    );
+    const result = await ProductService.updateOverViewImage(
+      +req.params.productId,
+      overviewDatabasePath
+    );
+    if (result.id && retrievedProduct.overview_img_url) {
+      await fs.unlink(retrievedProduct.overview_img_url as string);
+    }
+    saveImage([{ imagePath: overviewImagePath, buffer: overviewImageBuffer }]);
+    res.status(200).json({ message: "Product image updated successfully" });
+  } catch (err: any) {
+    HTTPError.handleControllerError(err, next);
+  }
+};
+export const deleteProductOverViewImage = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const retrievedProduct = await ProductService.findById(
+      +req.params.productId
+    );
+    if (retrievedProduct.overview_img_url) {
+      await fs.unlink(retrievedProduct.overview_img_url as string);
+    }
+    const result = await ProductService.updateOverViewImage(
+      +req.params.productId,
+      null
+    );
+    res.status(200).json({ message: "Product image deleted successfully" });
+  } catch (err: any) {
+    HTTPError.handleControllerError(err, next);
+  }
+};
+export const addProductImages = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+      return;
+    }
+    const resImgs = await handleImages(req);
+    if (!resImgs) {
+      throw new HTTPError(400, "Image is required");
+    }
+    const { imagesPaths, imagesDatabasePaths, imagesBuffers } = resImgs;
+    const imagesPathsAsStringArray: string[] = imagesPaths as string[];
+    const imagesBuffersAsBufferArray: Buffer[] = imagesBuffers as Buffer[];
+
+    const productImages = new ProductImages(
+      undefined,
+      undefined,
+      +req.params.productId
+    );
+    const retrievedProductImgs =
+      (await productImages.findByProductId()) as ProductImages[];
+    if (retrievedProductImgs.length + imagesPathsAsStringArray.length > 5) {
+      throw new HTTPError(
+        400,
+        "You can not add more than 5 images to a product"
+      );
+    }
+    const result = await ProductService.createProductImage(
+      +req.params.productId,
+      imagesDatabasePaths
+    );
+    saveImage([
+      ...imagesBuffersAsBufferArray.map((buffer, index) => ({
+        imagePath: imagesPathsAsStringArray[index],
+        buffer,
+      })),
+    ]);
+    res.status(200).json({ message: "Product image added successfully" });
+  } catch (err: any) {
+    HTTPError.handleControllerError(err, next);
+  }
+};
+export const updateProductImages = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+      return;
+    }
+    const id = req.body.ids as number;
+    const resImg = await handleImage(req);
+    if (!resImg) {
+      throw new HTTPError(400, "Image is required");
+    }
+    const { imagePath, buffer } = resImg;
+    const productImage = new ProductImages(id, imagePath, undefined);
+    const retrievedImg = (await productImage.findById()) as ProductImages;
+    const result = (await productImage.update()) as ProductImages;
+    if ((result.id, retrievedImg)) {
+      await fs.unlink(retrievedImg.image_url as string);
+    }
+    saveImage([{ imagePath, buffer }]);
+    res.status(200).json({ message: "Product image updated successfully" });
+  } catch (err: any) {
+    HTTPError.handleControllerError(err, next);
+  }
+};
+export const deleteProductImage = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const id = req.body.ids as number;
+    const productImage = new ProductImages(id);
+    const result = (await productImage.delete()) as ProductImages;
+    if (result.id) {
+      await fs.unlink(result.image_url as string);
+    }
+    res.status(200).json({ message: "Product image deleted successfully" });
   } catch (err: any) {
     HTTPError.handleControllerError(err, next);
   }
@@ -135,12 +286,14 @@ export const deleteProduct = async (
     }
     const product = new Product(productId);
     const productResult = new ProductImages(undefined, undefined, productId);
-    const images = (await productResult.getByProductId()) as ProductImages[];
-    const result = (await product.deleteProduct()) as Product;
-    await clearImage(result.overview_img_url);
-    images.forEach(async (image) => {
-      await clearImage(image.image_url as string);
-    });
+    const images = (await productResult.findByProductId()) as ProductImages[];
+    const result = (await product.delete()) as Product;
+    if (result.overview_img_url) {
+      await clearImage(result.overview_img_url);
+    }
+    await Promise.all(
+      images.map((image) => clearImage(image.image_url as string))
+    );
     res.status(200).json({
       message: "Product deleted successfully",
       result,
@@ -371,7 +524,7 @@ export const updateOrder = async (
       throw new HTTPError(404, `Order with ID ${orderId} not found`);
     }
 
-    const isUserAuthorized = order.user_id === userId || userRole === "Admin";
+    const isUserAuthorized = order.user_id === userId || userRole === "admin";
 
     if (!isUserAuthorized) {
       throw new HTTPError(403, "You are not authorized to update this order");

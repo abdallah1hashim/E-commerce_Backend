@@ -12,7 +12,7 @@ export default class Product {
     public description: string = "",
     public price: number = 0,
     public stock: number = 0,
-    public overview_img_url: string = "",
+    public overview_img_url: string | null = null,
     public category_id?: number
   ) {
     this.id = id;
@@ -24,31 +24,47 @@ export default class Product {
     this.category_id = category_id;
   }
 
-  static async getAllProducts(limit: number = 10, offset: number = 0) {
+  static async getAll(
+    limit: number = 10,
+    offset: number = 0,
+    searchTerm?: string
+  ) {
+    const client = await Pool.connect();
     try {
-      const result = await Pool.query(
-        `SELECT 
+      let query = `
+        SELECT 
           p.*, 
-          array_agg(pi.image_url) as images, 
-          c.name as category_name 
-          FROM 
-            product p 
-          LEFT JOIN 
-            product_images pi ON p.id = pi.product_id 
-          LEFT JOIN 
-            category c ON p.category_id = c.id
-          GROUP BY 
-            p.id, c.name
-          LIMIT $1 OFFSET $2;
-        `,
-        [limit, offset]
-      );
+          c.name AS category_name 
+        FROM 
+          product p 
+        LEFT JOIN 
+          category c ON p.category_id = c.id
+      `;
+      const params: (number | string)[] = [limit, offset];
+
+      // Add WHERE clause for searchTerm
+      if (searchTerm) {
+        query += ` WHERE p.name ILIKE $3 `;
+        params.push(`%${searchTerm}%`);
+      }
+
+      query += `
+        GROUP BY 
+          p.id, c.name
+        LIMIT $1 OFFSET $2;
+      `;
+
+      const result = await client.query(query, params);
+
       if (result.rows.length === 0) {
         throw new HTTPError(404, "No products found");
       }
+
       return result.rows as Product[];
     } catch (error: any) {
       HTTPError.handleModelError(error);
+    } finally {
+      client.release();
     }
   }
 
@@ -97,17 +113,16 @@ export default class Product {
     }
   }
 
-  async updateProduct() {
+  async update() {
     try {
       const results = await Pool.query(
-        "UPDATE product SET name = $1, description = $2, price = $3, stock = $4, overview_img_url = $6, bought_times = $7 WHERE id = $5 RETURNING *",
+        "UPDATE product SET name = $1, description = $2, price = $3, stock = $4,  bought_times = $6 WHERE id = $5 RETURNING *",
         [
           this.name,
           this.description,
           this.price,
           this.stock,
           this.id,
-          this.overview_img_url,
           this.bought_times,
         ]
       );
@@ -120,7 +135,22 @@ export default class Product {
     }
   }
 
-  async deleteProduct() {
+  async updateOverView() {
+    try {
+      const results = await Pool.query(
+        "UPDATE product SET overview_img_url = $1 WHERE id = $2 RETURNING *",
+        [this.overview_img_url, this.id]
+      );
+      if (results.rows.length === 0) {
+        throw new HTTPError(404, "Product not found or no changes made");
+      }
+      return results.rows[0] as Product;
+    } catch (error: any) {
+      HTTPError.handleModelError(error);
+    }
+  }
+
+  async delete() {
     try {
       const imagesResult = await Pool.query(
         "SELECT image_url FROM product_images WHERE product_id = $1",

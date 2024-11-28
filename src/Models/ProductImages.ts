@@ -13,7 +13,21 @@ export default class ProductImages {
     this.image_url = image_url;
   }
 
-  async getByProductId(client?: PoolClient) {
+  async findById(client?: PoolClient) {
+    try {
+      const results = await (client || pool).query(
+        "SELECT * FROM product_images WHERE id = $1",
+        [this.id]
+      );
+      if (results.rows.length === 0) {
+        return null;
+      }
+      return results.rows[0] as ProductImages;
+    } catch (error: any) {
+      HTTPError.handleModelError(error);
+    }
+  }
+  async findByProductId(client?: PoolClient) {
     try {
       const results = await (client || pool).query(
         "SELECT * FROM product_images WHERE product_id = $1",
@@ -34,31 +48,35 @@ export default class ProductImages {
         "INSERT INTO product_images (image_url, product_id) VALUES ($1, $2) RETURNING *",
         [this.image_url, this.product_id]
       );
-      if (results.rows.length === 0) {
-        return null;
-      }
+
+      if (results.rows.length === 0) return null;
+
       return results.rows[0] as ProductImages;
     } catch (error: any) {
       HTTPError.handleModelError(error);
     }
   }
-
-  async updateProductImage() {
+  async update() {
     try {
-      return await pool.query(
+      const res = await pool.query(
         "UPDATE product_images SET image_url = $1 WHERE id = $2 RETURNING *",
         [this.image_url, this.id]
       );
+      if (!res.rows[0]) return null;
+      return res.rows[0] as ProductImages;
     } catch (error: any) {
       HTTPError.handleModelError(error);
     }
   }
-  async deleteProductImage() {
+
+  async delete() {
     try {
-      return await pool.query(
+      const res = await pool.query(
         "DELETE FROM product_images WHERE id = $1 RETURNING *",
         [this.id]
       );
+      if (!res.rows[0]) return null;
+      return res.rows[0] as ProductImages;
     } catch (error: any) {
       HTTPError.handleModelError(error);
     }

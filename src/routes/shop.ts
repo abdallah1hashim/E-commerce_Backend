@@ -1,4 +1,6 @@
+// imports
 import { NextFunction, Request, Response, Router } from "express";
+
 import {
   addToCart,
   createProduct,
@@ -12,13 +14,14 @@ import {
   updateQuantityInCart,
 } from "../controllers/shop";
 import { ProductValidators } from "../validators/product";
-import { authorize, isAutenticated, isCustomer } from "../middlewares/isAuth";
-import uploadMiddleware from "../middlewares/multer";
+import { authorize, isAutenticated } from "../middlewares/isAuth";
+import uploadMiddleware, {
+  uploadToUpdateOverviewImgMiddleware,
+} from "../middlewares/multer";
 import cartValidator, {
   cartIdValidator,
   cartQuantityValidator,
 } from "../validators/cart";
-import { body } from "express-validator";
 import { Permissions } from "../rbacConfig";
 import { checkOwnership } from "../middlewares/checkOwnership";
 
@@ -40,6 +43,7 @@ router.put(
   "/products/:productId",
   isAutenticated,
   authorize(Permissions.UPDATE_PRODUCT),
+  uploadToUpdateOverviewImgMiddleware,
   ProductValidators,
   updateProduct
 );
