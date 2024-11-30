@@ -1,6 +1,7 @@
 import { Response } from "express";
 import fs from "fs/promises";
 import path from "path";
+import Category from "../Models/Category";
 
 export const clearImage = async (imagePath: string) => {
   const filePath = path.resolve(__dirname, "../../images", imagePath);

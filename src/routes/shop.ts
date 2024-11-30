@@ -7,6 +7,7 @@ import {
   deleteProduct,
   getAllProducts,
   getCartItems,
+  getCategores,
   getProductById,
   removeAllFromCart,
   removeItemFromCart,
@@ -53,6 +54,10 @@ router.delete(
   authorize(Permissions.DELETE_PRODUCT),
   deleteProduct
 );
+
+// catergories routes
+
+router.get("/categories", getCategores);
 
 // Cart routes
 router.get(

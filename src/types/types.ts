@@ -1,3 +1,4 @@
+import Category from "../Models/Category";
 import Order from "../Models/Order";
 import OrderItem from "../Models/OrderItem";
 

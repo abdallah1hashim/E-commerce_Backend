@@ -17,6 +17,9 @@ import ProductService from "../services/productService";
 import ProductImages from "../Models/ProductImages";
 import OrderService from "../services/OrderService";
 import Order from "../Models/Order";
+import Category from "../Models/Category";
+import CategoryService from "../services/CategoryService";
+import CategoryModel from "../Models/Category";
 
 export const getAllProducts = async (
   req: Request,
@@ -42,13 +45,14 @@ export const createProduct = async (
   next: NextFunction
 ) => {
   try {
+    // 1. Validate input
     const errors = validationResult(req);
-    console.log(errors);
     if (!errors.isEmpty()) {
       res.status(400).json({ errors: errors.array() });
       return;
     }
 
+    // 2. Handle images
     const resImg = await handleOverviewImage(req);
     const resImgs = await handleImages(req);
     if (!resImg || !resImgs) {
@@ -61,6 +65,7 @@ export const createProduct = async (
     const imagesPathsAsStringArray: string[] = imagesPaths as string[];
     const imagesBuffersAsBufferArray: Buffer[] = imagesBuffers as Buffer[];
 
+    // 3. Create product (service layer)
     await ProductService.createProduct(
       req.body.name,
       req.body.description,
@@ -71,6 +76,7 @@ export const createProduct = async (
       imagesDatabasePaths
     );
 
+    // 4. save image if all goes well
     saveImage([
       { imagePath: overviewImagePath, buffer: overviewImageBuffer },
       ...imagesBuffersAsBufferArray.map((buffer, index) => ({
@@ -78,7 +84,7 @@ export const createProduct = async (
         buffer,
       })),
     ]);
-
+    // 5. send response
     res.status(201).json({ message: "Product created successfully" });
   } catch (err: any) {
     HTTPError.handleControllerError(err, next);
@@ -303,6 +309,93 @@ export const deleteProduct = async (
   }
 };
 
+export const getCategores = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Fetch all categories
+    const categories = (await Category.findAll()) as Category[];
+    // Generate nested category structure
+    const nestedCategories = CategoryService.buildCategoryTree(categories);
+
+    // Send response
+    res.status(200).json({ categories: nestedCategories });
+  } catch (err: any) {
+    HTTPError.handleControllerError(err, next);
+  }
+};
+export const createCategory = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+      return;
+    }
+    const { name, parentId } = req.body;
+    const category = await CategoryService.createCategory({
+      name,
+      parentId,
+    });
+    res
+      .status(200)
+      .json({ message: "Category created successfully", data: category });
+  } catch (error: any) {
+    HTTPError.handleControllerError(error, next);
+  }
+};
+
+export const updateCategory = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+      return;
+    }
+    const { id, name, parentId } = req.body;
+    const category = await CategoryModel.update({
+      id,
+      name,
+      parentId,
+    });
+    res
+      .status(200)
+      .json({ message: "Category updated successfully", data: category });
+  } catch (error: any) {
+    HTTPError.handleControllerError(error, next);
+  }
+};
+
+export const deleteCategory = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+      return;
+    }
+    const { id } = req.body;
+    const category = await CategoryModel.destroy({ where: { id } });
+    res
+      .status(200)
+      .json({ message: "Category deleted successfully", data: category });
+  } catch (error: any) {
+    HTTPError.handleControllerError(error, next);
+  }
+};
+
 export const getCartItems = async (
   req: Request,
   res: Response,
@@ -487,7 +580,7 @@ export const getOrderById = async (
     }
 
     let order: DetailedOrder;
-    if (role === "Admin") {
+    if (role === "admin") {
       order = (await OrderService.getOrderById(orderId)) as DetailedOrder;
     } else {
       order = (await OrderService.getOrderById(
