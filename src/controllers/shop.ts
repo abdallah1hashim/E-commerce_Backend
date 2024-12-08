@@ -21,6 +21,7 @@ import Category from "../Models/Category";
 import CategoryService from "../services/CategoryService";
 import CategoryModel from "../Models/Category";
 
+// prdoucts controller
 export const getAllProducts = async (
   req: Request,
   res: Response,
@@ -30,9 +31,15 @@ export const getAllProducts = async (
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const offset = (page - 1) * limit;
-    const search = req.query.search as string;
+    const searchTerm = req.query.search as string;
+    const categoryId = Number(req.query.category);
 
-    const products = await Product.getAll(limit, offset, search);
+    const products = await Product.getAll({
+      limit,
+      offset,
+      searchTerm,
+      categoryId,
+    });
     res.status(200).json({ products });
   } catch (err: any) {
     HTTPError.handleControllerError(err, next);
@@ -309,19 +316,25 @@ export const deleteProduct = async (
   }
 };
 
+// Categories Controller
 export const getCategores = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
+    const { isnested } = req.query;
     // Fetch all categories
     const categories = (await Category.findAll()) as Category[];
     // Generate nested category structure
-    const nestedCategories = CategoryService.buildCategoryTree(categories);
+    if (isnested === "true") {
+      const nestedCategories = CategoryService.buildCategoryTree(categories);
+      res.status(200).json({ categories: nestedCategories });
+      return;
+    }
 
     // Send response
-    res.status(200).json({ categories: nestedCategories });
+    res.status(200).json({ categories: categories });
   } catch (err: any) {
     HTTPError.handleControllerError(err, next);
   }
@@ -361,7 +374,8 @@ export const updateCategory = async (
       res.status(400).json({ errors: errors.array() });
       return;
     }
-    const { id, name, parentId } = req.body;
+    const id = Number(req.params.id);
+    const { name, parentId } = req.body;
     const category = await CategoryModel.update({
       id,
       name,
@@ -386,7 +400,7 @@ export const deleteCategory = async (
       res.status(400).json({ errors: errors.array() });
       return;
     }
-    const { id } = req.body;
+    const id = Number(req.params.id);
     const category = await CategoryModel.destroy({ where: { id } });
     res
       .status(200)
@@ -396,6 +410,7 @@ export const deleteCategory = async (
   }
 };
 
+// Cart Controller
 export const getCartItems = async (
   req: Request,
   res: Response,
@@ -526,6 +541,8 @@ export const removeAllFromCart = async (
     HTTPError.handleControllerError(err, next);
   }
 };
+
+// Order Controller
 export const createOrder = async (
   res: Response,
   req: Request,

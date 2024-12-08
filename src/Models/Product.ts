@@ -24,11 +24,12 @@ export default class Product {
     this.category_id = category_id;
   }
 
-  static async getAll(
-    limit: number = 10,
-    offset: number = 0,
-    searchTerm?: string
-  ) {
+  static async getAll(data: {
+    limit?: number;
+    offset?: number;
+    searchTerm?: string;
+    categoryId?: number;
+  }): Promise<Product[]> {
     const client = await Pool.connect();
     try {
       let query = `
@@ -40,19 +41,33 @@ export default class Product {
         LEFT JOIN 
           category c ON p.category_id = c.id
       `;
-      const params: (number | string)[] = [limit, offset];
+      const params: (number | string)[] = [];
+      const conditions: string[] = [];
 
-      // Add WHERE clause for searchTerm
-      if (searchTerm) {
-        query += ` WHERE p.name ILIKE $3 `;
-        params.push(`%${searchTerm}%`);
+      // Add WHERE clause for categoryId
+      if (data.categoryId) {
+        conditions.push(`p.category_id = $${params.length + 1}`);
+        params.push(data.categoryId);
       }
 
+      // Add WHERE clause for searchTerm
+      if (data.searchTerm) {
+        conditions.push(`p.name ILIKE $${params.length + 1}`);
+        params.push(`%${data.searchTerm}%`);
+      }
+
+      // Append conditions to query
+      if (conditions.length > 0) {
+        query += ` WHERE ` + conditions.join(" AND ");
+      }
+
+      // Add limit and offset
       query += `
         GROUP BY 
           p.id, c.name
-        LIMIT $1 OFFSET $2;
+        LIMIT $${params.length + 1} OFFSET $${params.length + 2};
       `;
+      params.push(data.limit || 10, data.offset || 0);
 
       const result = await client.query(query, params);
 
@@ -63,6 +78,7 @@ export default class Product {
       return result.rows as Product[];
     } catch (error: any) {
       HTTPError.handleModelError(error);
+      throw error;
     } finally {
       client.release();
     }
