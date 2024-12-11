@@ -53,4 +53,18 @@ export class User {
       HTTPError.handleModelError(error);
     }
   }
+  async getUserById() {
+    try {
+      const result = await pool.query(
+        `SELECT * FROM "user" WHERE "id" = $1 LIMIT 1`,
+        [this.id]
+      );
+      if (result.rows.length === 0) {
+        throw new HTTPError(404, "User not found");
+      }
+      return result.rows[0] as User;
+    } catch (error: any) {
+      HTTPError.handleModelError(error);
+    }
+  }
 }

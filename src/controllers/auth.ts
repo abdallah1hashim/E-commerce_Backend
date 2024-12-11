@@ -35,13 +35,35 @@ export const login = async (
     }
     const { email, password } = req.body;
     const result = await UserService.loginUser(email, password);
-    const { token, user_id, role } = result as {
-      token: string;
-      user_id: number;
-      role: string;
+    const { access_token, refresh_token } = result as {
+      access_token: string;
+      refresh_token: string;
     };
     // send token
-    res.status(200).json({ token, user_id, role });
+    res.status(200).json({ access_token, refresh_token });
+  } catch (error: any) {
+    HTTPError.handleControllerError(error, next);
+  }
+};
+
+export const refreshToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { refresh_token: refresh_token_from_client } = req.body;
+    if (!refresh_token_from_client) {
+      throw new HTTPError(400, "Refresh token is required");
+    }
+    const { access_token, refresh_token } = (await UserService.refreshToken(
+      refresh_token_from_client
+    )) as {
+      access_token: string;
+      refresh_token: string;
+    };
+
+    res.status(200).json({ access_token, refresh_token });
   } catch (error: any) {
     HTTPError.handleControllerError(error, next);
   }

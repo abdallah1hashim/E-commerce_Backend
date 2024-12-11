@@ -2,8 +2,9 @@
 import { compare, hash } from "bcrypt";
 import { User } from "../Models/Users";
 import HTTPError from "../utils/HTTPError";
-import { sign } from "jsonwebtoken";
+import { JwtPayload, sign } from "jsonwebtoken";
 import { config } from "dotenv";
+import { verify } from "jsonwebtoken";
 
 config();
 
@@ -42,13 +43,53 @@ export class UserService {
         throw new HTTPError(401, "Invalid credentials");
       }
       const { id, name, email: emailUser, role, created_at } = result;
-      // create token
-      const token = sign(
-        { id, name, emailUser, role, created_at },
+      // create access_token
+      const access_token = sign(
+        { id, name, email, role, created_at },
         process.env.JWT_SECRET_KEY as string,
-        { expiresIn: "1h" }
+        { expiresIn: "15m" }
       );
-      return { token, user_id: id, role: role };
+      // Create refresh token
+      const refresh_token = sign(
+        { id },
+        process.env.JWT_REFRESH_SECRET_KEY as string,
+        { expiresIn: "30d" }
+      );
+      // improvement for later:Optionally save the refresh token in the database
+
+      return { access_token, refresh_token };
+    } catch (error) {
+      HTTPError.handleServiceError(error);
+    }
+  }
+
+  static async refreshToken(token: string) {
+    try {
+      const payload = verify(
+        token,
+        process.env.JWT_REFRESH_SECRET_KEY as string
+      ) as JwtPayload & { id: number };
+
+      const user = new User(payload.id);
+      const retrievedUser = (await user.getUserById()) as User;
+      const access_token = sign(
+        {
+          id: retrievedUser.id,
+          name: retrievedUser.name,
+          email: retrievedUser.email,
+          role: retrievedUser.role,
+          created_at: retrievedUser.created_at,
+        },
+        process.env.JWT_SECRET_KEY as string,
+        { expiresIn: "15m" }
+      );
+      // Create refresh token
+      const refresh_token = sign(
+        { id: payload.id },
+        process.env.JWT_REFRESH_SECRET_KEY as string,
+        { expiresIn: "30d" }
+      );
+      return { access_token, refresh_token };
     } catch (error) {
       HTTPError.handleServiceError(error);
     }
