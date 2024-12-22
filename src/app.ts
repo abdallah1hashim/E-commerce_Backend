@@ -8,12 +8,19 @@ import swaggerUi from "swagger-ui-express";
 
 import shopRouter from "./routes/shop";
 import authRouter from "./routes/auth";
+import { isAuthenticated } from "./controllers/auth";
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
   message: "Too many requests, please try again later.",
 });
+
+const corsOptions = {
+  origin: "http://localhost:5173", // Allow only this origin
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+};
 
 const swaggerOptions = {
   swaggerDefinition: {
@@ -35,7 +42,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(compression());
 app.use("/api", limiter);
 
@@ -45,6 +52,9 @@ app.use("/images", express.static("images"));
 // routes
 app.use("/shop", shopRouter);
 app.use("/auth", authRouter);
+app.use("/protected-route", isAuthenticated, (req, res) => {
+  res.send("This is a protected route.");
+});
 
 app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 // error handler

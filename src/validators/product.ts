@@ -13,9 +13,14 @@ export const ProductValidators = [
     .withMessage("Price is required")
     .isFloat({ gt: 0 })
     .withMessage("Price must be greater than 0"),
-  body("stock")
+  body("product_details")
+    .isArray({ min: 1 })
+    .withMessage("Product details must be an array"),
+  body("product_details.*.size").notEmpty().withMessage("Size is required"),
+  body("product_details.*.color").notEmpty().withMessage("Color is required"),
+  body("product_details.*.stock")
     .notEmpty()
     .withMessage("Stock is required")
-    .isInt({ min: 0 })
-    .withMessage("Stock must be greater than or equal to 0"),
+    .isInt({ gt: 0 })
+    .withMessage("Stock must be greater than 0"),
 ];

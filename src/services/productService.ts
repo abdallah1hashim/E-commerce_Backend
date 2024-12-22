@@ -1,7 +1,9 @@
 import Product from "../Models/Product";
 import ProductImages from "../Models/ProductImages";
-import pool from "../utils/ds";
-import HTTPError from "../utils/HTTPError";
+import pool from "../libs/ds";
+import HTTPError from "../libs/HTTPError";
+import { ProductDetailsPostData } from "../types/types";
+import ProductDetails from "../Models/ProductDetails";
 
 type ProductWithImages = Product & { images: ProductImages[] };
 
@@ -42,7 +44,8 @@ export default class ProductService {
     stock: number,
     overview_img_url: string,
     category_id: number,
-    images_url: string[]
+    images_url: string[],
+    product_details: ProductDetailsPostData[]
   ) {
     const client = await pool.connect();
     try {
@@ -70,8 +73,33 @@ export default class ProductService {
       ) {
         throw new HTTPError(400, "Error creating product");
       }
+      const createdProductDetails = [] as ProductDetails[];
+      await Promise.all(
+        product_details.map(async (detail) => {
+          const productDetail = new ProductDetails(
+            undefined,
+            detail.size,
+            detail.color,
+            detail.stock,
+            undefined,
+            createdProduct.id
+          );
+          const res = await productDetail.create({
+            product_id: createdProduct.id as number,
+          });
+          if (res === null) {
+            throw new HTTPError(400, "Error creating product details");
+          }
+          createdProductDetails.push(res);
+          return;
+        })
+      );
       await client.query("COMMIT");
-      return { ...createdProduct, images: retrievedimages };
+      return {
+        ...createdProduct,
+        product_details: createdProductDetails,
+        images: retrievedimages,
+      };
     } catch (error) {
       client.query("ROLLBACK");
       return HTTPError.handleServiceError(error);

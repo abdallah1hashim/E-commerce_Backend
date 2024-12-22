@@ -1,7 +1,7 @@
 import Order from "../Models/Order";
 import OrderItem from "../Models/OrderItem";
-import pool from "../utils/ds";
-import HTTPError from "../utils/HTTPError";
+import pool from "../libs/ds";
+import HTTPError from "../libs/HTTPError";
 
 export default class OrderService {
   static async createOrder(userId: number, orderItems: OrderItem[]) {

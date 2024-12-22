@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import ResourceService from "../services/ResourceService";
-import HTTPError from "../utils/HTTPError";
+import HTTPError from "../libs/HTTPError";
 import { ResourceType } from "../types/types";
 
 export const checkOwnership = (resourceType: ResourceType) => {

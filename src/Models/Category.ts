@@ -1,5 +1,5 @@
-import pool from "../utils/ds";
-import HTTPError from "../utils/HTTPError";
+import pool from "../libs/ds";
+import HTTPError from "../libs/HTTPError";
 
 // Explicitly define interfaces for type safety
 export interface Category {
@@ -61,7 +61,21 @@ export default class CategoryModel {
       throw error; // Re-throw to ensure caller can handle
     }
   }
-
+  static async findByName(name: string) {
+    try {
+      const result = await pool.query(
+        "SELECT id FROM category WHERE name = $1",
+        [name]
+      );
+      if (result.rows.length === 0) {
+        throw new HTTPError(404, "Category not found");
+      }
+      return result.rows[0].id;
+    } catch (error) {
+      HTTPError.handleModelError(error);
+      throw error;
+    }
+  }
   async create(): Promise<Category> {
     try {
       // Fix typo: 'parent' should be 'this.parentId'

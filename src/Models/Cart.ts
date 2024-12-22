@@ -1,5 +1,5 @@
-import HTTPError from "../utils/HTTPError";
-import pool from "../utils/ds";
+import HTTPError from "../libs/HTTPError";
+import pool from "../libs/ds";
 
 export default class Cart {
   constructor(

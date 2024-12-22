@@ -1,6 +1,7 @@
 import { PoolClient } from "pg";
-import HTTPError from "../utils/HTTPError";
-import Pool from "../utils/ds";
+import HTTPError from "../libs/HTTPError";
+import Pool from "../libs/ds";
+import CategoryModel from "./Category";
 
 export default class Product {
   private created_at?: Date;
@@ -28,30 +29,40 @@ export default class Product {
     limit?: number;
     offset?: number;
     searchTerm?: string;
-    categoryId?: number;
+    category?: string;
+    is_featured?: boolean;
   }): Promise<Product[]> {
     const client = await Pool.connect();
     try {
       let query = `
         SELECT 
           p.*, 
-          c.name AS category_name 
+          c.name AS category_name
         FROM 
           product p 
         LEFT JOIN 
           category c ON p.category_id = c.id
       `;
-      const params: (number | string)[] = [];
+      const params: any[] = [];
       const conditions: string[] = [];
 
-      // Add WHERE clause for categoryId
-      if (data.categoryId) {
-        conditions.push(`p.category_id = $${params.length + 1}`);
-        params.push(data.categoryId);
+      // Handle is_featured
+      if (data.is_featured !== undefined) {
+        conditions.push(`p.is_featured = $${params.length + 1}`);
+        params.push(data.is_featured);
       }
 
-      // Add WHERE clause for searchTerm
-      if (data.searchTerm) {
+      // Handle category
+      if (data.category !== undefined) {
+        const categoryId = await CategoryModel.findByName(data.category.trim());
+        if (categoryId) {
+          conditions.push(`p.category_id = $${params.length + 1}`);
+          params.push(categoryId);
+        }
+      }
+
+      // Handle search term
+      if (data.searchTerm !== undefined) {
         conditions.push(`p.name ILIKE $${params.length + 1}`);
         params.push(`%${data.searchTerm}%`);
       }
@@ -61,13 +72,18 @@ export default class Product {
         query += ` WHERE ` + conditions.join(" AND ");
       }
 
-      // Add limit and offset
+      // Add group by, limit, and offset
       query += `
         GROUP BY 
           p.id, c.name
-        LIMIT $${params.length + 1} OFFSET $${params.length + 2};
+        LIMIT $${params.length + 1} OFFSET $${params.length + 2}
       `;
-      params.push(data.limit || 10, data.offset || 0);
+
+      // Ensure limit and offset are numbers
+      const limit = Number(data.limit) || 10;
+      const offset = Number(data.offset) || 0;
+
+      params.push(limit, offset);
 
       const result = await client.query(query, params);
 
@@ -84,6 +100,61 @@ export default class Product {
     }
   }
 
+  static async getProductsCount(data: {
+    category?: string;
+    searchTerm?: string;
+    is_featured?: boolean;
+  }): Promise<number> {
+    const client = await Pool.connect();
+    try {
+      let query = `
+        SELECT COUNT(*) AS count
+        FROM product p
+        LEFT JOIN category c ON p.category_id = c.id
+      `;
+      const params: any[] = [];
+      const conditions: string[] = [];
+
+      // Handle is_featured
+      if (data.is_featured !== undefined) {
+        conditions.push(`p.is_featured = $${params.length + 1}`);
+        params.push(data.is_featured);
+      }
+
+      // Handle category
+      if (data.category !== undefined) {
+        const categoryId = await CategoryModel.findByName(data.category.trim());
+        if (categoryId) {
+          conditions.push(`p.category_id = $${params.length + 1}`);
+          params.push(categoryId);
+        }
+      }
+
+      // Handle search term
+      if (data.searchTerm !== undefined) {
+        conditions.push(`p.name ILIKE $${params.length + 1}`);
+        params.push(`%${data.searchTerm}%`);
+      }
+
+      // Append conditions to query
+      if (conditions.length > 0) {
+        query += ` WHERE ` + conditions.join(" AND ");
+      }
+
+      const result = await client.query(query, params);
+
+      if (result.rows.length === 0) {
+        throw new HTTPError(404, "No products found");
+      }
+
+      return result.rows[0].count;
+    } catch (error: any) {
+      HTTPError.handleModelError(error);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
   async getById(client?: PoolClient) {
     try {
       const query = `SELECT 

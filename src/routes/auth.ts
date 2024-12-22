@@ -1,12 +1,15 @@
 import { Router } from "express";
-import { login, refreshToken, signUp } from "../controllers/auth";
+import { login, signUp } from "../controllers/auth";
 import { loginValidators, signUpValidators } from "../validators/user";
 
 const router = Router();
 
 router.post("/signup", signUpValidators, signUp);
 router.post("/login", loginValidators, login);
-router.post("/refresh", refreshToken);
+router.post("/logout", (req, res, next) => {
+  res.clearCookie("access_token");
+  res.json({ message: "Logged out successfully" });
+});
 
 export default router;
 /**

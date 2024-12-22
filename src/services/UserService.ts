@@ -1,10 +1,10 @@
 // src/services/UserService.ts
 import { compare, hash } from "bcrypt";
 import { User } from "../Models/Users";
-import HTTPError from "../utils/HTTPError";
-import { JwtPayload, sign } from "jsonwebtoken";
+import HTTPError from "../libs/HTTPError";
 import { config } from "dotenv";
-import { verify } from "jsonwebtoken";
+import { createToken } from "../libs/utils";
+import { UserRole } from "../types/types";
 
 config();
 
@@ -44,54 +44,55 @@ export class UserService {
       }
       const { id, name, email: emailUser, role, created_at } = result;
       // create access_token
-      const access_token = sign(
-        { id, name, email, role, created_at },
-        process.env.JWT_SECRET_KEY as string,
-        { expiresIn: "15m" }
-      );
+      const userData = {
+        id,
+        name,
+        email: emailUser,
+        role,
+        created_at,
+      };
+      if (!id || !role) {
+        throw new HTTPError(404, "User not found");
+      }
       // Create refresh token
-      const refresh_token = sign(
-        { id },
-        process.env.JWT_REFRESH_SECRET_KEY as string,
-        { expiresIn: "30d" }
-      );
-      // improvement for later:Optionally save the refresh token in the database
+      const access_token = createToken(id as number, role);
 
-      return { access_token, refresh_token };
+      // send token
+      return { access_token, userData };
     } catch (error) {
       HTTPError.handleServiceError(error);
     }
   }
 
-  static async refreshToken(token: string) {
-    try {
-      const payload = verify(
-        token,
-        process.env.JWT_REFRESH_SECRET_KEY as string
-      ) as JwtPayload & { id: number };
+  // static async refreshToken(token: string) {
+  //   try {
+  //     const payload = verify(
+  //       token,
+  //       process.env.JWT_REFRESH_SECRET_KEY as string
+  //     ) as JwtPayload & { id: number };
 
-      const user = new User(payload.id);
-      const retrievedUser = (await user.getUserById()) as User;
-      const access_token = sign(
-        {
-          id: retrievedUser.id,
-          name: retrievedUser.name,
-          email: retrievedUser.email,
-          role: retrievedUser.role,
-          created_at: retrievedUser.created_at,
-        },
-        process.env.JWT_SECRET_KEY as string,
-        { expiresIn: "15m" }
-      );
-      // Create refresh token
-      const refresh_token = sign(
-        { id: payload.id },
-        process.env.JWT_REFRESH_SECRET_KEY as string,
-        { expiresIn: "30d" }
-      );
-      return { access_token, refresh_token };
-    } catch (error) {
-      HTTPError.handleServiceError(error);
-    }
-  }
+  //     const user = new User(payload.id);
+  //     const retrievedUser = (await user.getUserById()) as User;
+  //     const access_token = sign(
+  //       {
+  //         id: retrievedUser.id,
+  //         name: retrievedUser.name,
+  //         email: retrievedUser.email,
+  //         role: retrievedUser.role,
+  //         created_at: retrievedUser.created_at,
+  //       },
+  //       process.env.JWT_SECRET_KEY as string,
+  //       { expiresIn: "15m" }
+  //     );
+  //     // Create refresh token
+  //     const refresh_token = sign(
+  //       { id: payload.id },
+  //       process.env.JWT_REFRESH_SECRET_KEY as string,
+  //       { expiresIn: "30d" }
+  //     );
+  //     return { access_token, refresh_token };
+  //   } catch (error) {
+  //     HTTPError.handleServiceError(error);
+  //   }
+  // }
 }

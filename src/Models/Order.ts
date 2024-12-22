@@ -1,6 +1,6 @@
 import { PoolClient } from "pg";
-import pool from "../utils/ds";
-import HTTPError from "../utils/HTTPError";
+import pool from "../libs/ds";
+import HTTPError from "../libs/HTTPError";
 
 export default class Order {
   constructor(
