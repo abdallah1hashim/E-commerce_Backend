@@ -1,6 +1,6 @@
 import { PoolClient } from "pg";
 import HTTPError from "../libs/HTTPError";
-import Pool from "../libs/ds";
+import Pool from "../libs/db";
 import CategoryModel from "./Category";
 
 export default class Product {
@@ -11,17 +11,11 @@ export default class Product {
     public id?: number,
     public name: string = "",
     public description: string = "",
-    public price: number = 0,
-    public stock: number = 0,
-    public overview_img_url: string | null = null,
     public category_id?: number
   ) {
     this.id = id;
     this.name = name;
     this.description = description;
-    this.price = price;
-    this.stock = stock;
-    this.overview_img_url = overview_img_url;
     this.category_id = category_id;
   }
 
@@ -30,7 +24,6 @@ export default class Product {
     offset?: number;
     searchTerm?: string;
     category?: string;
-    is_featured?: boolean;
   }): Promise<Product[]> {
     const client = await Pool.connect();
     try {
@@ -45,12 +38,6 @@ export default class Product {
       `;
       const params: any[] = [];
       const conditions: string[] = [];
-
-      // Handle is_featured
-      if (data.is_featured !== undefined) {
-        conditions.push(`p.is_featured = $${params.length + 1}`);
-        params.push(data.is_featured);
-      }
 
       // Handle category
       if (data.category !== undefined) {
@@ -180,16 +167,9 @@ export default class Product {
 
   async create(client: PoolClient) {
     try {
-      const results = await Pool.query(
-        "INSERT INTO product (name, description, price, stock, overview_img_url, category_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-        [
-          this.name,
-          this.description,
-          this.price,
-          this.stock,
-          this.overview_img_url,
-          this.category_id,
-        ]
+      const results = await client.query(
+        "INSERT INTO product (name, description, category_id) VALUES ($1, $2, $3) RETURNING *",
+        [this.name, this.description, this.category_id]
       );
       if (results.rows.length === 0) {
         return null;
@@ -204,29 +184,7 @@ export default class Product {
     try {
       const results = await Pool.query(
         "UPDATE product SET name = $1, description = $2, price = $3, stock = $4,  bought_times = $6 WHERE id = $5 RETURNING *",
-        [
-          this.name,
-          this.description,
-          this.price,
-          this.stock,
-          this.id,
-          this.bought_times,
-        ]
-      );
-      if (results.rows.length === 0) {
-        throw new HTTPError(404, "Product not found or no changes made");
-      }
-      return results.rows[0] as Product;
-    } catch (error: any) {
-      HTTPError.handleModelError(error);
-    }
-  }
-
-  async updateOverView() {
-    try {
-      const results = await Pool.query(
-        "UPDATE product SET overview_img_url = $1 WHERE id = $2 RETURNING *",
-        [this.overview_img_url, this.id]
+        [this.name, this.description, this.id, this.bought_times]
       );
       if (results.rows.length === 0) {
         throw new HTTPError(404, "Product not found or no changes made");

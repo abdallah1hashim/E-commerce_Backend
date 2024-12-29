@@ -1,6 +1,6 @@
 import { compare } from "bcrypt";
 
-import pool from "../libs/ds";
+import pool from "../libs/db";
 import HTTPError from "../libs/HTTPError";
 
 export class User {

@@ -1,4 +1,5 @@
-import pool from "../libs/ds";
+import { PoolClient } from "pg";
+import pool from "../libs/db";
 import HTTPError from "../libs/HTTPError";
 
 import { Size } from "../types/types";
@@ -8,6 +9,8 @@ export default class ProductDetails {
     public size?: Size,
     public color?: string,
     public stock?: number,
+    public price?: number,
+    public discount?: number,
     public img_preview?: string,
     public product_id?: number
   ) {
@@ -15,6 +18,8 @@ export default class ProductDetails {
     this.size = size;
     this.color = color;
     this.stock = stock;
+    this.price = price;
+    this.discount = discount;
     this.img_preview = img_preview;
     this.product_id = product_id;
   }
@@ -32,11 +37,19 @@ export default class ProductDetails {
       throw error;
     }
   }
-  async create(data: { product_id: number }) {
+  async create(client: PoolClient) {
     try {
-      const result = await pool.query(
-        `INSERT INTO product_details (size, color, stock, product_id) VALUES ($1, $2, $3, $4) RETURNING *`,
-        [this.size, this.color, this.stock, this.product_id]
+      const result = await client.query(
+        `INSERT INTO product_details (size, color, stock, price, discount, img_preview, product_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+        [
+          this.size,
+          this.color,
+          this.stock,
+          this.price,
+          this.discount,
+          this.img_preview,
+          this.product_id,
+        ]
       );
       if (result.rows.length === 0) {
         throw new HTTPError(404, "Product details not created");

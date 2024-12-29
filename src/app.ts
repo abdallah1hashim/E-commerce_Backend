@@ -5,10 +5,16 @@ import compression from "compression";
 import rateLimit from "express-rate-limit";
 import swaggerJsDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
+import dotenv from "dotenv";
 
 import shopRouter from "./routes/shop";
 import authRouter from "./routes/auth";
+import testRouter from "./routes/test";
+
 import { isAuthenticated } from "./controllers/auth";
+import { zodErrorInterceptor } from "./middlewares/zodInterceptor";
+
+dotenv.config();
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -17,24 +23,24 @@ const limiter = rateLimit({
 });
 
 const corsOptions = {
-  origin: "http://localhost:5173", // Allow only this origin
+  origin: "http://localhost:5173", // Allow requests from any origin
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true, // Allow credentials (cookies, authorization headers, etc.)
 };
 
-const swaggerOptions = {
-  swaggerDefinition: {
-    openapi: "3.0.0",
-    info: {
-      title: "API Documentation",
-      version: "1.0.0",
-      description: "API information",
-    },
-  },
-  apis: ["./src/routes/*.ts", "./routes/*.ts", "./routes/*.js"],
-};
+// const swaggerOptions = {
+//   swaggerDefinition: {
+//     openapi: "3.0.0",
+//     info: {
+//       title: "API Documentation",
+//       version: "1.0.0",
+//       description: "API information",
+//     },
+//   },
+//   apis: ["./src/routes/*.ts", "./routes/*.ts", "./routes/*.js"],
+// };
 
-const swaggerDocs = swaggerJsDoc(swaggerOptions);
+// const swaggerDocs = swaggerJsDoc(swaggerOptions);
 
 const app = express();
 
@@ -49,6 +55,10 @@ app.use("/api", limiter);
 // static
 app.use("/images", express.static("images"));
 
+// test
+
+app.use("/test", testRouter);
+
 // routes
 app.use("/shop", shopRouter);
 app.use("/auth", authRouter);
@@ -56,24 +66,14 @@ app.use("/protected-route", isAuthenticated, (req, res) => {
   res.send("This is a protected route.");
 });
 
-app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
-// error handler
-app.use((error: any, req: Request, res: Response, next: NextFunction) => {
-  error.type = error.type || "server";
-  if (!error.status || error.status === 500) {
-    console.error(
-      `${error.type} error: `,
-      error.message,
-      "with status:",
-      error.status
-    );
-  }
-  error.status = error.status || 500;
-  error.message =
-    error.status === 500 ? "Internal Server Error" : error.message;
+// app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-  res.status(error.status).json({ message: error.message });
+// 404
+app.use("/", (req, res) => {
+  res.status(404).json("404 Not Found: The URL you requested does not exist.");
 });
+// error handler
+app.use(zodErrorInterceptor);
 
 // server
 app.listen(process.env.PORT || 3000, () => {

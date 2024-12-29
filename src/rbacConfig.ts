@@ -11,6 +11,16 @@ export const Permissions = {
   UPDATE_PRODUCT: "UPDATE_PRODUCT",
   DELETE_PRODUCT: "DELETE_PRODUCT",
 
+  // category permissions
+  CREATE_CATEGORY: "CREATE_CATEGORY",
+  UPDATE_CATEGORY: "UPDATE_CATEGORY",
+  DELETE_CATEGORY: "DELETE_CATEGORY",
+
+  // Group permissions
+  CREATE_GROUP: "CREATE_GROUP",
+  UPDATE_GROUP: "UPDATE_GROUP",
+  DELETE_GROUP: "DELETE_GROUP",
+
   // Order permissions
   VIEW_ALL_ORDERS: "VIEW_ALL_ORDERS",
   CREATE_ORDER: "CREATE_ORDER",
@@ -38,6 +48,14 @@ export const Roles = {
     Permissions.CREATE_PRODUCT,
     Permissions.UPDATE_PRODUCT,
     Permissions.DELETE_PRODUCT,
+    // category
+    Permissions.CREATE_CATEGORY,
+    Permissions.UPDATE_CATEGORY,
+    Permissions.DELETE_CATEGORY,
+    // group
+    Permissions.CREATE_GROUP,
+    Permissions.UPDATE_GROUP,
+    Permissions.DELETE_GROUP,
     // order
     Permissions.VIEW_ALL_ORDERS,
     Permissions.CREATE_ORDER,
@@ -45,13 +63,21 @@ export const Roles = {
     Permissions.DELETE_ORDER,
   ],
   staff: [
-    // order
-    Permissions.VIEW_ALL_ORDERS,
-    Permissions.UPDATE_ORDER,
     // product
     Permissions.CREATE_PRODUCT,
     Permissions.UPDATE_PRODUCT,
     Permissions.DELETE_PRODUCT,
+    // category
+    Permissions.CREATE_CATEGORY,
+    Permissions.UPDATE_CATEGORY,
+    Permissions.DELETE_CATEGORY,
+    // group
+    Permissions.CREATE_GROUP,
+    Permissions.UPDATE_GROUP,
+    Permissions.DELETE_GROUP,
+    // order
+    Permissions.VIEW_ALL_ORDERS,
+    Permissions.UPDATE_ORDER,
     // cart
     Permissions.VIEW_CART,
   ],

@@ -22,4 +22,7 @@ export type ProductDetailsPostData = {
   size: Size;
   color: string;
   stock: number;
+  discount: number;
+  price: number;
+  img_preview?: string;
 };

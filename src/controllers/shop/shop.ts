@@ -6,116 +6,15 @@ import fs from "fs/promises";
 import Product from "../../Models/Product";
 import { clearImage } from "../../libs/utils";
 import { DetailedOrder, UserRole } from "../../types/types";
-import {
-  handleImage,
-  handleImages,
-  handleOverviewImage,
-  saveImage,
-} from "../../middlewares/multer";
+// import {
+//   handleImage,
+//   handleImages,
+//   handleOverviewImage,
+//   saveImage,
+// } from "../../middlewares/multer";
 import Cart from "../../Models/Cart";
-import ProductService from "../../services/productService";
-import ProductImages from "../../Models/ProductImages";
 import OrderService from "../../services/OrderService";
 import Order from "../../Models/Order";
-import Category from "../../Models/Category";
-import CategoryService from "../../services/CategoryService";
-import CategoryModel from "../../Models/Category";
-
-// prdoucts controller
-
-// Categories Controller
-export const getCategores = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { isnested } = req.query;
-    // Fetch all categories
-    const categories = (await Category.findAll()) as Category[];
-    // Generate nested category structure
-    if (isnested === "true") {
-      const nestedCategories = CategoryService.buildCategoryTree(categories);
-      res.status(200).json({ categories: nestedCategories });
-      return;
-    }
-
-    // Send response
-    res.status(200).json({ categories: categories });
-  } catch (err: any) {
-    HTTPError.handleControllerError(err, next);
-  }
-};
-export const createCategory = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({ errors: errors.array() });
-      return;
-    }
-    const { name, parentId } = req.body;
-    const category = await CategoryService.createCategory({
-      name,
-      parentId,
-    });
-    res
-      .status(200)
-      .json({ message: "Category created successfully", data: category });
-  } catch (error: any) {
-    HTTPError.handleControllerError(error, next);
-  }
-};
-
-export const updateCategory = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({ errors: errors.array() });
-      return;
-    }
-    const id = Number(req.params.id);
-    const { name, parentId } = req.body;
-    const category = await CategoryModel.update({
-      id,
-      name,
-      parentId,
-    });
-    res
-      .status(200)
-      .json({ message: "Category updated successfully", data: category });
-  } catch (error: any) {
-    HTTPError.handleControllerError(error, next);
-  }
-};
-
-export const deleteCategory = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({ errors: errors.array() });
-      return;
-    }
-    const id = Number(req.params.id);
-    const category = await CategoryModel.destroy({ where: { id } });
-    res
-      .status(200)
-      .json({ message: "Category deleted successfully", data: category });
-  } catch (error: any) {
-    HTTPError.handleControllerError(error, next);
-  }
-};
 
 // Cart Controller
 export const getCartItems = async (
@@ -151,18 +50,18 @@ export const addToCart = async (
     const productResult = (await product.getById()) as Product;
 
     // Check if the product is available in stock
-    if (!productResult || productResult.stock === 0) {
-      throw new HTTPError(400, "Product out of stock");
-    }
+    // if (!productResult || productResult.stock === 0) {
+    //   throw new HTTPError(400, "Product out of stock");
+    // }
 
     // Create or fetch the cart for the user and product
     const cart = new Cart(undefined, req.userId, productId, quantity);
     const cartResult = (await cart.getCartByProductIdAndUserId()) as Cart;
 
     if (cartResult) {
-      if (quantity + cartResult.quantity > productResult.stock) {
-        throw new HTTPError(400, "Not enough stock available");
-      }
+      // if (quantity + cartResult.quantity > productResult.stock) {
+      //   throw new HTTPError(400, "Not enough stock available");
+      // }
       if (quantity + cartResult.quantity > Number(process.env.MAX_QUANTITY)) {
         throw new HTTPError(400, "Maximum quantity exceeded");
       }
@@ -183,9 +82,9 @@ export const addToCart = async (
         .json({ message: "Product quantity updated successfully" });
       return;
     }
-    if (quantity > productResult.stock) {
-      throw new HTTPError(400, "Not enough stock available");
-    }
+    // if (quantity > productResult.stock) {
+    //   throw new HTTPError(400, "Not enough stock available");
+    // }
     await cart.createCart();
     res.status(201).json({ message: "Product added to cart successfully" });
   } catch (err: any) {

@@ -3,16 +3,18 @@ import { NextFunction, Request, Response, Router } from "express";
 
 import {
   addToCart,
-  createCategory,
-  deleteCategory,
   getCartItems,
-  getCategores,
   removeAllFromCart,
   removeItemFromCart,
-  updateCategory,
   updateQuantityInCart,
 } from "../controllers/shop/shop";
 
+import {
+  createCategory,
+  deleteCategory,
+  getCategores,
+  updateCategory,
+} from "../controllers/shop/category";
 import {
   createProduct,
   deleteProduct,
@@ -21,12 +23,10 @@ import {
   updateProduct,
 } from "../controllers/shop/product";
 
-import { ProductValidators } from "../validators/product";
+// import { ProductValidators } from "../validators/product";
 import { authorize } from "../middlewares/isAuth";
 
-import uploadMiddleware, {
-  uploadToUpdateOverviewImgMiddleware,
-} from "../middlewares/multer";
+import uploadMiddleware from "../middlewares/multer";
 import cartValidator, {
   cartIdValidator,
   cartQuantityValidator,
@@ -35,6 +35,13 @@ import { Permissions } from "../rbacConfig";
 import { checkOwnership } from "../middlewares/checkOwnership";
 import { body } from "express-validator";
 import { isAuthenticated } from "../controllers/auth";
+import {
+  createGroup,
+  deleteGroup,
+  getGroups,
+  getOneGroup,
+  updateGroup,
+} from "../controllers/shop/group";
 
 const router = Router();
 
@@ -47,15 +54,13 @@ router.post(
   isAuthenticated,
   authorize(Permissions.CREATE_PRODUCT),
   uploadMiddleware,
-  ProductValidators,
   createProduct
 );
 router.put(
   "/products/:productId",
   isAuthenticated,
   authorize(Permissions.UPDATE_PRODUCT),
-  uploadToUpdateOverviewImgMiddleware,
-  ProductValidators,
+  uploadMiddleware,
   updateProduct
 );
 router.delete(
@@ -82,6 +87,30 @@ router.put(
   updateCategory
 );
 router.delete("/categories/:id", deleteCategory);
+
+// groups routes
+
+router.get("/groups", getGroups);
+router.post(
+  "/groups",
+  isAuthenticated,
+  authorize(Permissions.CREATE_GROUP),
+  createGroup
+);
+router.get("/groups/:id", getOneGroup);
+router.put(
+  "/groups/:id",
+  isAuthenticated,
+  authorize(Permissions.UPDATE_GROUP),
+  updateGroup
+);
+router.put(
+  "/groups/:id",
+  isAuthenticated,
+  authorize(Permissions.DELETE_GROUP),
+  deleteGroup
+);
+
 // Cart routes
 router.get(
   "/cart",

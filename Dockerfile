@@ -1,19 +1,16 @@
-FROM node:23-alpine3.19
+FROM node:20-alpine3.19 AS builder
 
-# Set working directory
 WORKDIR /app
-
-# Copy dependency files
 COPY package*.json ./
+RUN npm ci
 
-# Install dependencies
-RUN npm install
-
-# Copy the source code
-COPY ./src ./src
+COPY . .
 
 # Expose the port the application runs on
 EXPOSE 8000
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD wget --quiet --tries=1 --spider http://localhost:8000/health || exit 1
 
 # Command to run the app
-CMD npm run build && npm run serve
+CMD ["npm", "start"]

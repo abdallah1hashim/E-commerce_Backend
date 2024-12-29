@@ -1,6 +1,6 @@
 import Order from "../Models/Order";
 import OrderItem from "../Models/OrderItem";
-import pool from "../libs/ds";
+import pool from "../libs/db";
 import HTTPError from "../libs/HTTPError";
 
 export default class OrderService {

@@ -1,9 +1,10 @@
 import Product from "../Models/Product";
 import ProductImages from "../Models/ProductImages";
-import pool from "../libs/ds";
+import pool from "../libs/db";
 import HTTPError from "../libs/HTTPError";
 import { ProductDetailsPostData } from "../types/types";
 import ProductDetails from "../Models/ProductDetails";
+import GroupToProduct from "../Models/GroupToProduct";
 
 type ProductWithImages = Product & { images: ProductImages[] };
 
@@ -40,24 +41,14 @@ export default class ProductService {
   static async createProduct(
     name: string,
     description: string,
-    price: number,
-    stock: number,
-    overview_img_url: string,
     category_id: number,
+    group_id: number | undefined,
     images_url: string[],
     product_details: ProductDetailsPostData[]
   ) {
     const client = await pool.connect();
     try {
-      const product = new Product(
-        undefined,
-        name,
-        description,
-        price,
-        stock,
-        overview_img_url,
-        category_id
-      );
+      const product = new Product(undefined, name, description, category_id);
       await client.query("BEGIN");
       const createdProduct = (await product.create(client)) as Product;
       const retrievedimages = await Promise.all(
@@ -81,12 +72,12 @@ export default class ProductService {
             detail.size,
             detail.color,
             detail.stock,
-            undefined,
+            detail.price,
+            detail.discount,
+            detail.img_preview,
             createdProduct.id
           );
-          const res = await productDetail.create({
-            product_id: createdProduct.id as number,
-          });
+          const res = await productDetail.create(client);
           if (res === null) {
             throw new HTTPError(400, "Error creating product details");
           }
@@ -94,6 +85,13 @@ export default class ProductService {
           return;
         })
       );
+      if (group_id !== undefined) {
+        await GroupToProduct.addRelation(
+          client,
+          group_id,
+          createdProduct.id as number
+        );
+      }
       await client.query("COMMIT");
       return {
         ...createdProduct,
@@ -107,24 +105,7 @@ export default class ProductService {
       client.release();
     }
   }
-  static async updateOverViewImage(
-    id: number,
-    overview_img_url: string | null
-  ): Promise<Product> {
-    try {
-      const product = new Product(
-        id,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        overview_img_url
-      );
-      return (await product.updateOverView()) as Product;
-    } catch (error) {
-      throw HTTPError.handleServiceError(error);
-    }
-  }
+
   static async createProductImage(Productid: number, image_url: string[]) {
     const client = await pool.connect();
     try {

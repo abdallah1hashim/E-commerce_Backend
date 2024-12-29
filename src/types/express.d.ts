@@ -5,6 +5,7 @@ declare global {
     interface Request {
       userId?: number;
       userRole?: "admin" | "staff" | "supplier" | "customer";
+      files?: express.Multer.File[] | CustomFiles;
     }
   }
 }
@@ -21,6 +22,5 @@ export interface MulterFile {
 }
 
 export type CustomFiles = {
-  overview_img_url?: MulterFile[];
   images?: MulterFile[];
 };

@@ -37,8 +37,10 @@ export class UserService {
       const user = new User(undefined, "", email);
       // get user
       const result = (await user.getUserByEmail()) as User;
+      console.log(result);
       // check password
       const isCorrect = await compare(password, result.password);
+      console.log(isCorrect);
       if (!isCorrect) {
         throw new HTTPError(401, "Invalid credentials");
       }

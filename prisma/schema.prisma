@@ -1,0 +1,192 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Relations
+// Product-ProductDetails = One:Many
+// Product-ProductImages = One:Many
+// Product-Group = Many:Many
+// Product-Category = Many:One
+model Product {
+  id              Int              @id @default(autoincrement())
+  name            String           @db.VarChar(30)
+  description     String
+  category_id     Int
+  product_details ProductDetails[]
+  product_images  ProductImages[]
+  group           Group[]
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
+
+  category Category @relation(fields: [category_id], references: [id])
+
+  @@map("product")
+}
+
+model ProductDetails {
+  id          Int      @id @default(autoincrement())
+  size        Size
+  color       String   @db.VarChar(30)
+  price       Int
+  discount    Int      @default(0)
+  stock       Int      @default(0)
+  img_preview String   @db.VarChar(255)
+  product_id  Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@map("product_details")
+}
+
+model ProductImages {
+  id         Int      @id @default(autoincrement())
+  image_url  String   @db.VarChar(255)
+  product_id Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  product Product @relation(fields: [product_id], references: [id])
+
+  @@map("product_images")
+}
+
+model Category {
+  id         Int       @id @default(autoincrement())
+  name       String    @db.VarChar(30)
+  parent_id  Int?
+  product    Product[]
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  parent   Category?  @relation("CategoryToCategory", fields: [parent_id], references: [id])
+  children Category[] @relation("CategoryToCategory")
+
+  @@map("category")
+}
+
+model Group {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique @db.VarChar(30)
+  products Product[]
+
+  @@map("group")
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(30)
+  email      String   @unique
+  password   String   @db.VarChar(255)
+  role       Role     @default(customer)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  profile    Profile?
+
+  @@map("user")
+}
+
+model Profile {
+  id         Int    @id @default(autoincrement())
+  first_name String @db.VarChar(30)
+  last_name  String @db.VarChar(30)
+  phone      String @db.VarChar(30)
+  address    String @db.VarChar(255)
+  country    String @db.VarChar(30)
+  city       String @db.VarChar(30)
+  user_id    Int    @unique
+  user       User   @relation(fields: [user_id], references: [id])
+
+  @@map("profile")
+}
+
+enum Size {
+  XS
+  S
+  M
+  L
+  XL
+  XXL
+  XXXL
+  XXXXL
+  XXXXXL
+}
+
+enum Status {
+  Pending
+  Processing
+  Shipped
+  Delivered
+  Cancelled
+  Refunded
+  Completed
+}
+
+enum Role {
+  admin
+  staff
+  supplier
+  customer
+}
+
+enum PaymentMethod {
+  CashOnDelivery
+  Card
+  PayPal
+  Stripe
+}
+
+// model Cart {
+//   id                Int             @id @default(autoincrement())
+//   product_id        Int
+//   product           Product         @relation(fields: [product_id], references: [id], onDelete: Cascade)
+//   product_detail_id Int
+//   product_detail    ProductDetails @relation(fields: [product_detail_id], references: [id], onDelete: Cascade)
+//   quantity          Int
+//   user_id           Int
+//   user              User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+//   created_at        DateTime        @default(now())
+//   updated_at        DateTime        @updatedAt
+
+//   //
+//   @@map("cart")
+// }
+
+// model Order {
+//   id           Int          @id @default(autoincrement())
+//   user_id      Int
+//   user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+//   total_amount Decimal      @db.Decimal(10, 2)
+//   status       String
+//   created_at   DateTime     @default(now())
+//   updated_at   DateTime     @updatedAt
+//   order_items  OrderItems[]
+
+//   //
+//   @@map("order")
+// }
+
+// model OrderItems {
+//   id             Int     @id @default(autoincrement())
+//   order_id       Int
+//   order          Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+//   product_id     Int
+//   product        Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+//   quantity       Int
+//   price_per_item Decimal @db.Decimal(10, 2)
+
+//   //
+//   @@map("order_items")
+// }

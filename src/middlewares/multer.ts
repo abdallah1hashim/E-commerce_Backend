@@ -4,94 +4,89 @@ import path from "path";
 import fs from "fs/promises";
 import HTTPError from "../libs/HTTPError";
 import { CustomFiles } from "../types/express";
+import { count } from "console";
 
 const inMemoryStorage = memoryStorage();
 
-export const handleOverviewImage = async (
-  req: Request & { files?: CustomFiles }
-) => {
-  const overviewImage = req.files?.overview_img_url?.[0];
-  if (!overviewImage) {
-    return null;
+export const handleAllPreviewImages = async (req: Request) => {
+  if (!req.files || req.files.length === 0) {
+    return null; // No files uploaded
   }
-  const overviewImageOrignalName = overviewImage.originalname;
-  const overviewImageBuffer = overviewImage.buffer;
-  const overviewImagePath = path.join(
-    __dirname,
-    "..",
-    "..",
-    "images",
-    Date.now() +
-      "-" +
-      Math.random().toString(36) +
-      "-" +
-      overviewImage.originalname
+
+  // Filter all files with the prefix `img_preview`
+  const previewImages = (req.files as Express.Multer.File[]).filter((file) =>
+    file.fieldname.startsWith("img_preview[")
   );
-  const overviewDatabasePath = `/images/${overviewImageOrignalName}`;
-  return {
-    overviewImageOrignalName,
-    overviewDatabasePath,
-    overviewImageBuffer,
-    overviewImagePath,
-  };
+
+  if (previewImages.length === 0) {
+    return null; // No img_preview files found
+  }
+  // Process each preview image
+  const processedImages = previewImages.map((file) => {
+    const timestamp = Date.now();
+    const uniqueSuffix = Math.random().toString(36).substring(2, 8);
+    const fileName = `${timestamp}-${uniqueSuffix}-${file.originalname}`;
+
+    const previewImagePath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "images",
+      fileName
+    );
+    const previewDatabasePath = `/images/${fileName}`;
+
+    return {
+      originalName: file.originalname,
+      buffer: file.buffer,
+      localPath: previewImagePath,
+      databasePath: previewDatabasePath,
+    };
+  });
+
+  return { images: processedImages, count: processedImages.length };
 };
-export const handleImages = async (req: Request & { files?: CustomFiles }) => {
-  const imagesOriginal =
-    req.files?.images?.map((file) => {
-      return file.originalname;
-    }) || [];
-  if (imagesOriginal.length === 0) {
+
+export const handleProductImages = async (req: Request) => {
+  const images = (req.files as Express.Multer.File[]).filter(
+    (file) => file.fieldname === "images"
+  );
+  if (!images) {
     return null;
   }
-  const imagesPaths = req.files?.images?.map((file) => {
-    return path.join(
+
+  const processedImages = images.map((file, index) => {
+    const imagePath = path.join(
       __dirname,
       "..",
       "..",
       "images",
       Date.now() + "-" + Math.random().toString(36) + "-" + file.originalname
     );
+
+    return {
+      originalName: file.originalname,
+      databasePath: `/images/${file.originalname}`,
+      buffer: file.buffer,
+      localPath: imagePath,
+    };
   });
-  const imagesBuffers = req.files?.images?.map((file) => {
-    return file.buffer;
-  });
-  const imagesDatabasePaths =
-    req.files?.images?.map((file) => {
-      return `/images/${file.originalname}`;
-    }) || [];
 
   return {
-    imagesOriginal,
-    imagesDatabasePaths,
-    imagesPaths,
-    imagesBuffers,
+    images: processedImages,
+    count: processedImages.length,
   };
 };
-export const handleImage = async (req: Request & { files?: CustomFiles }) => {
-  const image = req.files?.images?.[0];
-  if (!image) {
-    return null;
-  }
-  const imageOrignalName = image.originalname;
-  const imageBuffer = image.buffer;
-  const imagePath = path.join(
-    __dirname,
-    "..",
-    "..",
-    "images",
-    Date.now() + "-" + Math.random().toString(36) + "-" + image.originalname
-  );
-};
-export const saveImage = async (
-  files: { imagePath: string; buffer: Buffer }[]
-) => {
+
+export const saveImages = async (files: { path: string; buffer: Buffer }[]) => {
   if (!files || files.length === 0) {
-    throw new HTTPError(400, "Image is required");
+    throw new HTTPError(400, "At least one image is required");
   }
+
   try {
     await Promise.all(
       files.map(async (file) => {
-        await fs.writeFile(file.imagePath, file.buffer);
+        await fs.writeFile(file.path, file.buffer);
       })
     );
   } catch (error: any) {
@@ -114,15 +109,7 @@ const fileFilter = (
 export const uploadMiddleware = multer({
   storage: inMemoryStorage,
   fileFilter: fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 },
-}).fields([
-  { name: "overview_img_url", maxCount: 1 },
-  { name: "images", maxCount: 5 },
-]);
-export const uploadToUpdateOverviewImgMiddleware = multer({
-  storage: inMemoryStorage,
-  fileFilter: fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 },
-}).fields([{ name: "overview_img_url", maxCount: 1 }]);
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB file size limit
+}).any();
 
 export default uploadMiddleware;

@@ -1,5 +1,5 @@
 import { ResourceType } from "../types/types";
-import pool from "../libs/ds";
+import pool from "../libs/db";
 
 export default class ResourceService {
   static async getById(resourceType: ResourceType, id: number) {
