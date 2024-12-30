@@ -4,11 +4,26 @@ import { User } from "../Models/Users";
 import HTTPError from "../libs/HTTPError";
 import { config } from "dotenv";
 import { createToken } from "../libs/utils";
-import { UserRole } from "../types/types";
 
 config();
 
 export class UserService {
+  static async getAllUsers(limit?: number, offset?: number) {
+    try {
+      const users = await User.getUsers(limit, offset);
+      return users;
+    } catch (error: any) {
+      HTTPError.handleServiceError(error);
+    }
+  }
+  static async getUserWithProfile(id: number) {
+    try {
+      const user = await User.getUserWithProfile(id);
+      return user;
+    } catch (error: any) {
+      HTTPError.handleServiceError(error);
+    }
+  }
   static async createUser(
     name: string,
     email: string,
@@ -65,36 +80,4 @@ export class UserService {
       HTTPError.handleServiceError(error);
     }
   }
-
-  // static async refreshToken(token: string) {
-  //   try {
-  //     const payload = verify(
-  //       token,
-  //       process.env.JWT_REFRESH_SECRET_KEY as string
-  //     ) as JwtPayload & { id: number };
-
-  //     const user = new User(payload.id);
-  //     const retrievedUser = (await user.getUserById()) as User;
-  //     const access_token = sign(
-  //       {
-  //         id: retrievedUser.id,
-  //         name: retrievedUser.name,
-  //         email: retrievedUser.email,
-  //         role: retrievedUser.role,
-  //         created_at: retrievedUser.created_at,
-  //       },
-  //       process.env.JWT_SECRET_KEY as string,
-  //       { expiresIn: "15m" }
-  //     );
-  //     // Create refresh token
-  //     const refresh_token = sign(
-  //       { id: payload.id },
-  //       process.env.JWT_REFRESH_SECRET_KEY as string,
-  //       { expiresIn: "30d" }
-  //     );
-  //     return { access_token, refresh_token };
-  //   } catch (error) {
-  //     HTTPError.handleServiceError(error);
-  //   }
-  // }
 }

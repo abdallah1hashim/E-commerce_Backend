@@ -124,25 +124,31 @@ export const isAuthenticated = async (
   }
 };
 
-// export const refreshToken = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ) => {
-//   try {
-//     const { refresh_token: refresh_token_from_client } = req.body;
-//     if (!refresh_token_from_client) {
-//       throw new HTTPError(400, "Refresh token is required");
-//     }
-//     const { access_token, refresh_token } = (await UserService.refreshToken(
-//       refresh_token_from_client
-//     )) as {
-//       access_token: string;
-//       refresh_token: string;
-//     };
+export const sendUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const users = await UserService.getAllUsers();
+    res.status(200).json({ users });
+  } catch (error: any) {
+    HTTPError.handleControllerError(error, next);
+  }
+};
 
-//     res.status(200).json({ access_token, refresh_token });
-//   } catch (error: any) {
-//     HTTPError.handleControllerError(error, next);
-//   }
-// };
+export const sendOneUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const id = Number(req.params.id);
+    const user = await UserService.getUserWithProfile(id);
+    res.status(200).json({ user });
+  } catch (error: any) {
+    HTTPError.handleControllerError(error, next);
+  }
+};
+
+const editUser = async (req: Request, res: Response, next: NextFunction) => {};

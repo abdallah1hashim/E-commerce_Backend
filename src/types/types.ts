@@ -15,6 +15,22 @@ export type DetailedOrder = Order & {
 
 export type UserRole = "Admin" | "Staff" | "Supplier" | "Customer";
 
+export type PublicUser = {
+  id: number;
+  name: string;
+  email: string;
+  role: UserRole;
+  isActive: boolean;
+  created_at: Date;
+};
+
+export type PublicUserWithProfile = PublicUser & {
+  firstName: string;
+  lastName: string;
+  address: string;
+  phone: string;
+};
+
 export type ResourceType = "product" | "cart" | "order";
 export type Size = "s" | "m" | "l" | "xl" | "2xl" | "3xl" | "4xl" | "5xl";
 
