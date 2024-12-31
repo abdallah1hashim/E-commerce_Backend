@@ -1,6 +1,13 @@
 import { Router } from "express";
-import { login, signUp } from "../controllers/auth";
+import {
+  isAuthenticated,
+  login,
+  sendOneUser,
+  sendUsers,
+  signUp,
+} from "../controllers/auth";
 import { loginValidators, signUpValidators } from "../validators/user";
+import { authorize } from "../middlewares/isAuth";
 
 const router = Router();
 
@@ -10,6 +17,12 @@ router.post("/logout", (req, res, next) => {
   res.clearCookie("access_token");
   res.json({ message: "Logged out successfully" });
 });
+router.get("/users", isAuthenticated, authorize("admin"), sendUsers);
+router.get("/users/:id", isAuthenticated, authorize("admin"), sendOneUser);
+router.post("/users", isAuthenticated, authorize("admin"));
+router.put("/users/:id", isAuthenticated, authorize("admin"));
+router.delete("/users/:id", isAuthenticated, authorize("admin"));
+//profile
 
 export default router;
 /**

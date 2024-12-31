@@ -4,6 +4,10 @@ import { User } from "../Models/Users";
 import HTTPError from "../libs/HTTPError";
 import { config } from "dotenv";
 import { createToken } from "../libs/utils";
+import { UserRole } from "../types/types";
+import { ProfileT, UserWithProfileT } from "../validators/user";
+import Profile from "../Models/Profile";
+import pool from "../libs/db";
 
 config();
 
@@ -47,6 +51,26 @@ export class UserService {
     }
   }
 
+  static async editUser(
+    id: number,
+    data: {
+      name: string;
+      email: string;
+      role?: UserRole;
+    }
+  ) {
+    try {
+      const user = new User(id, data.name, data.email, undefined, data.role);
+      const result = await user.updateUser();
+      if (!result) {
+        throw new HTTPError(404, "User not found");
+      }
+      return result;
+    } catch (error: any) {
+      HTTPError.handleServiceError(error);
+    }
+  }
+
   static async loginUser(email: string, password: string) {
     try {
       const user = new User(undefined, "", email);
@@ -77,6 +101,51 @@ export class UserService {
       // send token
       return { access_token, userData };
     } catch (error) {
+      HTTPError.handleServiceError(error);
+    }
+  }
+
+  static async editProfile(id: number, data: ProfileT) {
+    try {
+      const profile = new Profile(
+        id,
+        data.first_name,
+        data.last_name,
+        data.phone_number,
+        data.address,
+        data.city,
+        data.country
+      );
+      const result = await profile.update();
+      if (!result) {
+        throw new HTTPError(404, "Profile not found");
+      }
+      return result;
+    } catch (error: any) {}
+  }
+  static async editUserWithProile(id: number, data: UserWithProfileT) {
+    const client = await pool.connect();
+    try {
+      const user = new User(id, data.name, data.email, data.role);
+      const profile = new Profile(
+        undefined,
+        data.first_name,
+        data.last_name,
+        data.phone_number,
+        data.address,
+        data.city,
+        data.country,
+        id
+      );
+      await client.query("BEGIN");
+      const resultUser = await user.updateUser({ client: client });
+      const resultProfile = await profile.update(client);
+      if (!resultUser || !resultProfile) {
+        throw new HTTPError(404, "User not found");
+      }
+      await client.query("COMMIT");
+      return { resultUser, resultProfile };
+    } catch (error: any) {
       HTTPError.handleServiceError(error);
     }
   }

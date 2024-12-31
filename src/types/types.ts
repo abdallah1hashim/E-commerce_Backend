@@ -13,7 +13,7 @@ export type DetailedOrder = Order & {
   orderItems: OrderItem[];
 };
 
-export type UserRole = "Admin" | "Staff" | "Supplier" | "Customer";
+export type UserRole = "admin" | "staff" | "supplier" | "customer";
 
 export type PublicUser = {
   id: number;

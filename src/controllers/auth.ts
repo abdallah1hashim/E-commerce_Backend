@@ -5,6 +5,7 @@ import HTTPError from "../libs/HTTPError";
 import { decode, JwtPayload, verify } from "jsonwebtoken";
 import { parse } from "cookie";
 import { createToken } from "../libs/utils";
+import { profileSchema, UserScehma, UserWithProfile } from "../validators/user";
 
 export const signUp = async (
   req: Request,
@@ -150,5 +151,61 @@ export const sendOneUser = async (
     HTTPError.handleControllerError(error, next);
   }
 };
-
-const editUser = async (req: Request, res: Response, next: NextFunction) => {};
+//todo
+export const editUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const VD = UserScehma.parse(req.body);
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      throw new HTTPError(400, "Invalid user ID");
+    }
+    const user = await UserService.editUser(id, VD);
+    res
+      .status(200)
+      .json({ updatadUser: user, message: "User updated successfully" });
+  } catch (error: any) {
+    HTTPError.handleControllerError(error, next);
+  }
+};
+export const editUserProfile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const VD = UserWithProfile.parse(req.body);
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      throw new HTTPError(400, "Invalid user ID");
+    }
+    const user = await UserService.editUserWithProile(id, VD);
+    res
+      .status(200)
+      .json({ updatadUser: user, message: "User updated successfully" });
+  } catch (error: any) {
+    HTTPError.handleControllerError(error, next);
+  }
+};
+export const editProfile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const VD = profileSchema.parse(req.body);
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      throw new HTTPError(400, "Invalid user ID");
+    }
+    const user = await UserService.editProfile(id, VD);
+    res
+      .status(200)
+      .json({ updatadUser: user, message: "User updated successfully" });
+  } catch (error: any) {
+    HTTPError.handleControllerError(error, next);
+  }
+};

@@ -1,17 +1,17 @@
-import { compare } from "bcrypt";
-
+import { PoolClient } from "pg";
 import pool from "../libs/db";
 import HTTPError from "../libs/HTTPError";
 import { PublicUser, PublicUserWithProfile, UserRole } from "../types/types";
 
 export class User {
-  public role?: string;
   public created_at?: Date;
   constructor(
     public id?: number,
-    public name: string = "",
-    public email: string = "",
-    public password: string = ""
+    public name?: string,
+    public email?: string,
+    public password?: string,
+    public role?: UserRole,
+    public isActive?: boolean
   ) {
     this.id = id;
     this.name = name;
@@ -85,6 +85,43 @@ export class User {
         throw new HTTPError(404, "User not created");
       }
     } catch (error: any) {
+      HTTPError.handleModelError(error);
+    }
+  }
+  async updateUser({
+    newPassword,
+    client,
+  }: {
+    newPassword?: string;
+    client?: PoolClient;
+  } = {}) {
+    const c = client || pool;
+    try {
+      // get current role
+      const current = await c.query(
+        `SELECT * FROM "user" WHERE id = $1 LIMIT 1`,
+        [this.id]
+      );
+      if (current.rows.length === 0) {
+        throw new HTTPError(404, "User not found");
+      }
+      const currentUser: User = current.rows[0];
+      // update
+      const query = `UPDATE "user" SET name = $1, email = $2, password = $3, role = $4 WHERE id = $5 RETURNING *`;
+      const params = [
+        this.name || currentUser.name,
+        this.email || currentUser.email,
+        newPassword || currentUser.password,
+        this.role || currentUser.role,
+        this.id,
+      ];
+      const result = await pool.query(query, params);
+      if (result.rowCount === 0) {
+        throw new HTTPError(404, "User not updated");
+      }
+      return result.rows[0] as User;
+    } catch (error: any) {
+      c.query("ROLLBACK");
       HTTPError.handleModelError(error);
     }
   }

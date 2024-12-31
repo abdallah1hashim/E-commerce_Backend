@@ -1,3 +1,4 @@
+import { PoolClient } from "pg";
 import pool from "../libs/db";
 import HTTPError from "../libs/HTTPError";
 
@@ -6,8 +7,10 @@ export default class Profile {
     public id?: number,
     public first_name?: string,
     public last_name?: string,
-    public address?: string,
     public phone?: string,
+    public address?: string,
+    public city?: string,
+    public country?: string,
     public user_id?: number
   ) {
     this.id = id;
@@ -48,58 +51,58 @@ export default class Profile {
       throw error;
     }
   }
-  async create(user_id: number) {
-    const client = await pool.connect();
+  async create(client?: PoolClient) {
+    const c = client || pool;
     try {
-      client.query("BEGIN");
       const query = `
-                INSERT INTO profile (first_name, last_name, address, phone, user_id)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO profile (first_name, last_name, phone, address, city, country, user_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 RETURNING *
             `;
-      const result = await client.query(query, [
+      const result = await c.query(query, [
         this.first_name,
         this.last_name,
         this.address,
         this.phone,
-        user_id,
+        this.city,
+        this.country,
+        this.user_id,
       ]);
       if (result.rows.length === 0)
         throw new HTTPError(500, "Error creating profile");
-      client.query("COMMIT");
       return result.rows[0];
     } catch (error) {
-      client.query("ROLLBACK");
-      throw new HTTPError(500, "Error creating profile");
-    } finally {
-      client.release();
+      client && client.query("ROLLBACK");
+      HTTPError.handleModelError(error);
     }
   }
-  async update(id: number) {
-    const client = await pool.connect();
+  async update(client?: PoolClient) {
+    const c = client || pool;
+    const id = this.id || this.user_id;
     try {
-      client.query("BEGIN");
-      const query = `
-                UPDATE profile SET first_name = $1, last_name = $2, address = $3, phone = $4
-                WHERE id = $5
-                RETURNING *
-            `;
-      const result = await client.query(query, [
+      const baseQuery = `
+          UPDATE profile 
+          SET first_name = $1, last_name = $2, phone = $3, address = $4, city = $5, country = $6
+          WHERE 
+        `;
+      const query = this.id
+        ? baseQuery + `id = $7 RETURNING *`
+        : baseQuery + `user_id = $7 RETURNING *`;
+      const result = await c.query(query, [
         this.first_name,
         this.last_name,
         this.address,
         this.phone,
+        this.city,
+        this.country,
         id,
       ]);
       if (result.rows.length === 0)
         throw new HTTPError(500, "Error updating profile");
-      client.query("COMMIT");
-      return result.rows[0];
-    } catch (error) {
-      client.query("ROLLBACK");
-      throw new HTTPError(500, "Error updating profile");
-    } finally {
-      client.release();
+      return result.rows[0] as Profile;
+    } catch (err: any) {
+      client && client.query("ROLLBACK");
+      HTTPError.handleModelError(err);
     }
   }
   async delete(id: number) {
