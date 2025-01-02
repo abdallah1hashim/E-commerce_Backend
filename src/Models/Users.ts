@@ -78,8 +78,8 @@ export class User {
         this.password
       );
       const result = await pool.query(
-        `INSERT INTO "user"(name, email, password) VALUES ($1, $2, $3) RETURNING *`,
-        [this.name, this.email, this.password]
+        `INSERT INTO "user"(name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING *`,
+        [this.name, this.email, this.password, this.role || "customer"]
       );
       if (result.rows.length === 0) {
         throw new HTTPError(404, "User not created");

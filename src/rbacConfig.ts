@@ -1,6 +1,9 @@
-export const Permissions = {
+export const permissions = {
   // User permissions
   VIEW_ALL_USERS: "VIEW_ALL_USERS",
+  CREATE_USER: "CREATE_USER",
+  VIEW_USER: "VIEW_USER",
+  VIEW_OWN_USER: "VIEW_OWN_USER",
   UPDATE_USER: "UPDATE_USER",
   DELETE_USER: "DELETE_USER",
   UPDATE_OWN_USER: "UPDATE_OWN_USER",
@@ -41,61 +44,67 @@ export const Permissions = {
 export const Roles = {
   admin: [
     // user
-    Permissions.VIEW_ALL_USERS,
-    Permissions.UPDATE_USER,
-    Permissions.DELETE_USER,
+    permissions.VIEW_ALL_USERS,
+    permissions.CREATE_USER,
+    permissions.UPDATE_USER,
+    permissions.DELETE_USER,
+    permissions.VIEW_OWN_USER,
     // product
-    Permissions.CREATE_PRODUCT,
-    Permissions.UPDATE_PRODUCT,
-    Permissions.DELETE_PRODUCT,
+    permissions.CREATE_PRODUCT,
+    permissions.UPDATE_PRODUCT,
+    permissions.DELETE_PRODUCT,
     // category
-    Permissions.CREATE_CATEGORY,
-    Permissions.UPDATE_CATEGORY,
-    Permissions.DELETE_CATEGORY,
+    permissions.CREATE_CATEGORY,
+    permissions.UPDATE_CATEGORY,
+    permissions.DELETE_CATEGORY,
     // group
-    Permissions.CREATE_GROUP,
-    Permissions.UPDATE_GROUP,
-    Permissions.DELETE_GROUP,
+    permissions.CREATE_GROUP,
+    permissions.UPDATE_GROUP,
+    permissions.DELETE_GROUP,
     // order
-    Permissions.VIEW_ALL_ORDERS,
-    Permissions.CREATE_ORDER,
-    Permissions.UPDATE_ORDER,
-    Permissions.DELETE_ORDER,
+    permissions.VIEW_ALL_ORDERS,
+    permissions.CREATE_ORDER,
+    permissions.UPDATE_ORDER,
+    permissions.DELETE_ORDER,
   ],
   staff: [
     // product
-    Permissions.CREATE_PRODUCT,
-    Permissions.UPDATE_PRODUCT,
-    Permissions.DELETE_PRODUCT,
+    permissions.CREATE_PRODUCT,
+    permissions.UPDATE_PRODUCT,
+    permissions.DELETE_PRODUCT,
+    permissions.VIEW_OWN_USER,
     // category
-    Permissions.CREATE_CATEGORY,
-    Permissions.UPDATE_CATEGORY,
-    Permissions.DELETE_CATEGORY,
+    permissions.CREATE_CATEGORY,
+    permissions.UPDATE_CATEGORY,
+    permissions.DELETE_CATEGORY,
     // group
-    Permissions.CREATE_GROUP,
-    Permissions.UPDATE_GROUP,
-    Permissions.DELETE_GROUP,
+    permissions.CREATE_GROUP,
+    permissions.UPDATE_GROUP,
+    permissions.DELETE_GROUP,
     // order
-    Permissions.VIEW_ALL_ORDERS,
-    Permissions.UPDATE_ORDER,
+    permissions.VIEW_ALL_ORDERS,
+    permissions.UPDATE_ORDER,
     // cart
-    Permissions.VIEW_CART,
+    permissions.VIEW_CART,
   ],
   customer: [
     // order
-    Permissions.VIEW_OWN_ORDERS,
-    Permissions.CREATE_OWN_ORDER,
-    Permissions.UPDATE_OWN_ORDER,
+    permissions.VIEW_OWN_ORDERS,
+    permissions.CREATE_OWN_ORDER,
+    permissions.UPDATE_OWN_ORDER,
+    permissions.VIEW_OWN_USER,
     // cart
-    Permissions.VIEW_OWN_CART,
-    Permissions.CREATE_OWN_CART,
-    Permissions.UPDATE_OWN_CART,
-    Permissions.DELETE_OWN_CART,
+    permissions.VIEW_OWN_CART,
+    permissions.CREATE_OWN_CART,
+    permissions.UPDATE_OWN_CART,
+    permissions.DELETE_OWN_CART,
   ],
   supplier: [
+    // user
+    permissions.VIEW_OWN_USER,
     // product
-    Permissions.CREATE_PRODUCT,
-    Permissions.UPDATE_PRODUCT,
-    Permissions.DELETE_PRODUCT,
+    permissions.CREATE_PRODUCT,
+    permissions.UPDATE_PRODUCT,
+    permissions.DELETE_PRODUCT,
   ],
 };

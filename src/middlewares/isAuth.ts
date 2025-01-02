@@ -8,6 +8,17 @@ export const authorize = (requiredPermission: string) => {
       if (!role) {
         throw new Error("Role not defined");
       }
+      const isOwnerPermission = requiredPermission.includes("OWN");
+      if (isOwnerPermission) {
+        const userId = req.userId as number;
+        const resourceId = req.params.id
+          ? Number(req.params.id)
+          : Number(req.body.id);
+        if (userId !== resourceId) {
+          res.status(403).json({ message: "Forbidden: Access denied" });
+          return;
+        }
+      }
 
       const permissions = Roles[role];
       if (!permissions || !permissions.includes(requiredPermission)) {

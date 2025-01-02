@@ -178,7 +178,7 @@ export const getOrders = async (
     const userId = req.userId as number;
     const role = req.userRole as UserRole;
     let orders;
-    if (role === "Admin") {
+    if (role === "admin") {
       orders = await Order.getAll();
     } else {
       orders = await Order.getAll(userId);

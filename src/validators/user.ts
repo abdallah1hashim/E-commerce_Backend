@@ -52,10 +52,11 @@ export type loginT = z.infer<typeof loginSchema>;
 export const UserScehma = z.object({
   name: Name,
   email: Email,
+  password: Password,
   role: Role.optional(),
 });
 
-export type UserT = z.infer<typeof UserScehma>;
+export type UserT = Omit<z.infer<typeof UserScehma>, "password">;
 
 export const profileSchema = z.object({
   first_name: FirstName,

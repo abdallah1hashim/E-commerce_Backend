@@ -2,27 +2,46 @@ import { Router } from "express";
 import {
   isAuthenticated,
   login,
-  sendOneUser,
-  sendUsers,
+  getUser,
+  getAllUsers,
   signUp,
 } from "../controllers/auth";
-import { loginValidators, signUpValidators } from "../validators/user";
 import { authorize } from "../middlewares/isAuth";
+import { permissions } from "../rbacConfig";
 
 const router = Router();
 
-router.post("/signup", signUpValidators, signUp);
-router.post("/login", loginValidators, login);
+router.post("/signup", signUp);
+router.post("/login", login);
 router.post("/logout", (req, res, next) => {
   res.clearCookie("access_token");
   res.json({ message: "Logged out successfully" });
 });
-router.get("/users", isAuthenticated, authorize("admin"), sendUsers);
-router.get("/users/:id", isAuthenticated, authorize("admin"), sendOneUser);
-router.post("/users", isAuthenticated, authorize("admin"));
-router.put("/users/:id", isAuthenticated, authorize("admin"));
-router.delete("/users/:id", isAuthenticated, authorize("admin"));
-//profile
+router.get(
+  "/users",
+  isAuthenticated,
+  authorize(permissions.VIEW_ALL_USERS),
+  getAllUsers
+);
+router.get(
+  "/users/:id",
+  isAuthenticated,
+  authorize(permissions.VIEW_USER),
+  getUser
+);
+router.get(
+  "/me",
+  isAuthenticated,
+  authorize(permissions.VIEW_OWN_USER),
+  getUser
+);
+router.post("/users", isAuthenticated, authorize(permissions.CREATE_USER));
+router.put("/users/:id", isAuthenticated, authorize(permissions.UPDATE_USER));
+router.delete(
+  "/users/:id",
+  isAuthenticated,
+  authorize(permissions.DELETE_USER)
+);
 
 export default router;
 /**

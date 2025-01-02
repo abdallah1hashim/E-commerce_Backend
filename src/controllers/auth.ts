@@ -125,7 +125,7 @@ export const isAuthenticated = async (
   }
 };
 
-export const sendUsers = async (
+export const getAllUsers = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -138,7 +138,7 @@ export const sendUsers = async (
   }
 };
 
-export const sendOneUser = async (
+export const getUser = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -151,57 +151,53 @@ export const sendOneUser = async (
     HTTPError.handleControllerError(error, next);
   }
 };
-//todo
-export const editUser = async (
+
+export const createUser = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
-    const VD = UserScehma.parse(req.body);
-    const id = Number(req.params.id);
-    if (isNaN(id)) {
-      throw new HTTPError(400, "Invalid user ID");
-    }
-    const user = await UserService.editUser(id, VD);
-    res
-      .status(200)
-      .json({ updatadUser: user, message: "User updated successfully" });
+    const { name, email, password, role } = UserScehma.parse(req.body);
+    const user = await UserService.createUser(name, email, password, role);
+    res.status(201).json({ message: "User created successfully", user: user });
   } catch (error: any) {
     HTTPError.handleControllerError(error, next);
   }
 };
-export const editUserProfile = async (
+export const editUserData = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const VD = UserWithProfile.parse(req.body);
     const id = Number(req.params.id);
+    const editType = req.query.type as string;
+
     if (isNaN(id)) {
       throw new HTTPError(400, "Invalid user ID");
     }
-    const user = await UserService.editUserWithProile(id, VD);
-    res
-      .status(200)
-      .json({ updatadUser: user, message: "User updated successfully" });
-  } catch (error: any) {
-    HTTPError.handleControllerError(error, next);
-  }
-};
-export const editProfile = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const VD = profileSchema.parse(req.body);
-    const id = Number(req.params.id);
-    if (isNaN(id)) {
-      throw new HTTPError(400, "Invalid user ID");
+
+    let validatedData;
+    let user;
+
+    switch (editType) {
+      case "user":
+        validatedData = UserScehma.parse(req.body);
+        user = await UserService.editUser(id, validatedData);
+        break;
+      case "profile":
+        validatedData = profileSchema.parse(req.body);
+        user = await UserService.editProfile(id, validatedData);
+        break;
+      case "userProfile":
+        validatedData = UserWithProfile.parse(req.body);
+        user = await UserService.editUserWithProile(id, validatedData);
+        break;
+      default:
+        throw new HTTPError(400, "Invalid edit type");
     }
-    const user = await UserService.editProfile(id, VD);
+
     res
       .status(200)
       .json({ updatadUser: user, message: "User updated successfully" });

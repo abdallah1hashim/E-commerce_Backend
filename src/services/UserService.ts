@@ -31,13 +31,14 @@ export class UserService {
   static async createUser(
     name: string,
     email: string,
-    password: string
+    password: string,
+    role?: UserRole
   ): Promise<void> {
     try {
       const hashedPassword = await hash(password, 10);
 
       // Check if the user already exists
-      const user = new User(undefined, name, email, hashedPassword);
+      const user = new User(undefined, name, email, hashedPassword, role);
       const existingUser = await user.getUserByEmail();
 
       if (existingUser) {
@@ -78,8 +79,7 @@ export class UserService {
       const result = (await user.getUserByEmail()) as User;
       console.log(result);
       // check password
-      const isCorrect = await compare(password, result.password);
-      console.log(isCorrect);
+      const isCorrect = await compare(password, result.password || "");
       if (!isCorrect) {
         throw new HTTPError(401, "Invalid credentials");
       }
