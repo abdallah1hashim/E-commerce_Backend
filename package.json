@@ -7,6 +7,8 @@
     "start": "nodemon --exec ts-node --files src/app.ts",
     "build": "tsc",
     "serve": "node dist/app.js",
+    "prisma:create": "npx prisma migrate dev --create-only",
+    "prisma:reset": "npx prisma migrate reset",
     "prisma:dev": "npx prisma migrate dev",
     "prisma:seed": "npx prisma db seed",
     "prisma:deploy": "npx prisma migrate deploy"

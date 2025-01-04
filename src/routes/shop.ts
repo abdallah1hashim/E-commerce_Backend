@@ -31,7 +31,7 @@ import cartValidator, {
   cartIdValidator,
   cartQuantityValidator,
 } from "../validators/cart";
-import { Permissions } from "../rbacConfig";
+import { permissions } from "../rbacConfig";
 import { checkOwnership } from "../middlewares/checkOwnership";
 import { body } from "express-validator";
 import { isAuthenticated } from "../controllers/auth";
@@ -52,21 +52,21 @@ router.get("/products/:productId", getProductById);
 router.post(
   "/products",
   isAuthenticated,
-  authorize(Permissions.CREATE_PRODUCT),
+  authorize(permissions.CREATE_PRODUCT),
   uploadMiddleware,
   createProduct
 );
 router.put(
   "/products/:productId",
   isAuthenticated,
-  authorize(Permissions.UPDATE_PRODUCT),
+  authorize(permissions.UPDATE_PRODUCT),
   uploadMiddleware,
   updateProduct
 );
 router.delete(
   "/products/:productId",
   isAuthenticated,
-  authorize(Permissions.DELETE_PRODUCT),
+  authorize(permissions.DELETE_PRODUCT),
   deleteProduct
 );
 
@@ -94,20 +94,20 @@ router.get("/groups", getGroups);
 router.post(
   "/groups",
   isAuthenticated,
-  authorize(Permissions.CREATE_GROUP),
+  authorize(permissions.CREATE_GROUP),
   createGroup
 );
 router.get("/groups/:id", getOneGroup);
 router.put(
   "/groups/:id",
   isAuthenticated,
-  authorize(Permissions.UPDATE_GROUP),
+  authorize(permissions.UPDATE_GROUP),
   updateGroup
 );
 router.put(
   "/groups/:id",
   isAuthenticated,
-  authorize(Permissions.DELETE_GROUP),
+  authorize(permissions.DELETE_GROUP),
   deleteGroup
 );
 
@@ -115,26 +115,26 @@ router.put(
 router.get(
   "/cart",
   isAuthenticated,
-  authorize(Permissions.VIEW_OWN_CART),
+  authorize(permissions.VIEW_OWN_CART),
   getCartItems
 );
 router.post(
   "/cart",
   isAuthenticated,
-  authorize(Permissions.CREATE_OWN_CART),
+  authorize(permissions.CREATE_OWN_CART),
   cartValidator,
   addToCart
 );
 router.delete(
   "/cart",
   isAuthenticated,
-  authorize(Permissions.DELETE_OWN_CART),
+  authorize(permissions.DELETE_OWN_CART),
   removeAllFromCart
 );
 router.put(
   "/cart",
   isAuthenticated,
-  authorize(Permissions.UPDATE_OWN_CART),
+  authorize(permissions.UPDATE_OWN_CART),
   cartIdValidator,
   checkOwnership("cart"),
   cartQuantityValidator,
@@ -154,28 +154,28 @@ router.delete(
 router.post(
   "/admin/order",
   isAuthenticated,
-  authorize(Permissions.CREATE_ORDER)
+  authorize(permissions.CREATE_ORDER)
 );
 router.post(
   "/admin/order",
   isAuthenticated,
-  authorize(Permissions.DELETE_ORDER)
+  authorize(permissions.DELETE_ORDER)
 );
 
 // staff or higher
-router.get("/order", isAuthenticated, authorize(Permissions.VIEW_ALL_ORDERS));
-router.put("/order", isAuthenticated, authorize(Permissions.UPDATE_ORDER));
+router.get("/order", isAuthenticated, authorize(permissions.VIEW_ALL_ORDERS));
+router.put("/order", isAuthenticated, authorize(permissions.UPDATE_ORDER));
 
 // customer
-router.get("/order", isAuthenticated, authorize(Permissions.VIEW_OWN_ORDERS));
-router.post("/order", isAuthenticated, authorize(Permissions.CREATE_OWN_ORDER));
-router.put("/order", isAuthenticated, authorize(Permissions.UPDATE_OWN_ORDER));
+router.get("/order", isAuthenticated, authorize(permissions.VIEW_OWN_ORDERS));
+router.post("/order", isAuthenticated, authorize(permissions.CREATE_OWN_ORDER));
+router.put("/order", isAuthenticated, authorize(permissions.UPDATE_OWN_ORDER));
 
 // user routes
-router.get("/user", isAuthenticated, authorize(Permissions.VIEW_ALL_USERS));
-router.post("/user", isAuthenticated, authorize(Permissions.UPDATE_OWN_USER));
-router.put("/user", isAuthenticated, authorize(Permissions.UPDATE_USER));
-router.delete("/user", isAuthenticated, authorize(Permissions.DELETE_USER));
+router.get("/user", isAuthenticated, authorize(permissions.VIEW_ALL_USERS));
+router.post("/user", isAuthenticated, authorize(permissions.UPDATE_OWN_USER));
+router.put("/user", isAuthenticated, authorize(permissions.UPDATE_USER));
+router.delete("/user", isAuthenticated, authorize(permissions.DELETE_USER));
 
 export default router;
 /**

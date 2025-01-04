@@ -11,6 +11,7 @@ export const authorize = (requiredPermission: string) => {
       const isOwnerPermission = requiredPermission.includes("OWN");
       if (isOwnerPermission) {
         const userId = req.userId as number;
+        console.log(userId);
         const resourceId = req.params.id
           ? Number(req.params.id)
           : Number(req.body.id);

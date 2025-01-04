@@ -22,7 +22,7 @@ export class User {
   static async getUsers(limit?: number, offset?: number) {
     try {
       const result = await pool.query(
-        `SELECT id, name, email, role, isActive, created_at FROM "user" LIMIT ${
+        `SELECT id, name, email, role, is_active, created_at FROM "user" LIMIT ${
           limit || 10
         } OFFSET ${offset || 0}`
       );
@@ -36,29 +36,40 @@ export class User {
   }
   static async getUserWithProfile(id: number) {
     try {
-      const result = await pool.query(
-        `
+      const query = `
         SELECT
-          u.id, u.name, u.email, u.role, u.isActive, u.created_at,
+          u.id,
+          u.name,
+          u.email,
+          u.role,
+          u.is_active,
+          u.created_at,
           COALESCE(
             json_agg(
               json_build_object(
-                'firstName', p.first_name,
-                'lastName', p.last_name,
-                'email', p.email,
-                'phone', p.phone,
-                'address', p.address
+                'firstName',
+                p.first_name,
+                'lastName',
+                p.last_name,
+                'phone',
+                p.phone,
+                'address',
+                p.address,
+                'city',
+                p.city,
+                'country',
+                p.country
               )
-            ))
-          ) as profile
-          FROM  "user" AS u
-          LEFT JOIN
-          profile AS p
-          WHERE 
-          u.id = p.user_id AND u.id = $1
-        `,
-        [id]
-      );
+            ),
+            '[]'::json
+          ) AS profile
+        FROM "user" AS u
+        LEFT JOIN profile AS p
+        ON u.id = p.user_id
+        WHERE u.id = $1
+        GROUP BY u.id;
+        `;
+      const result = await pool.query(query, [id]);
       if (result.rows.length === 0 || !result.rows) {
         throw new HTTPError(404, "Users not found");
       }
@@ -147,6 +158,20 @@ export class User {
       );
       if (result.rows.length === 0) {
         throw new HTTPError(404, "User not found");
+      }
+      return result.rows[0] as User;
+    } catch (error: any) {
+      HTTPError.handleModelError(error);
+    }
+  }
+  async destroy() {
+    try {
+      const result = await pool.query(
+        `DELETE FROM "user" WHERE id = $1 RETURNING *`,
+        [this.id]
+      );
+      if (result.rows.length === 0) {
+        throw new HTTPError(404, "User not deleted");
       }
       return result.rows[0] as User;
     } catch (error: any) {

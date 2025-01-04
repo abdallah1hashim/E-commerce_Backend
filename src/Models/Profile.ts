@@ -105,23 +105,17 @@ export default class Profile {
       HTTPError.handleModelError(err);
     }
   }
-  async delete(id: number) {
-    const client = await pool.connect();
+  async destroy() {
     try {
-      client.query("BEGIN");
       const query = `
                 DELETE FROM profile WHERE id = $1 RETURNING *
             `;
-      const result = await client.query(query, [id]);
+      const result = await pool.query(query, [this.id]);
       if (result.rows.length === 0)
         throw new HTTPError(500, "Error deleting profile");
-      client.query("COMMIT");
       return result.rows[0];
     } catch (error) {
-      client.query("ROLLBACK");
       throw new HTTPError(500, "Error deleting profile");
-    } finally {
-      client.release();
     }
   }
 }

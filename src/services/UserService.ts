@@ -149,4 +149,22 @@ export class UserService {
       HTTPError.handleServiceError(error);
     }
   }
+  static async deleteUser(id: number) {
+    try {
+      const user = new User(id);
+      const result = await user.destroy();
+      return result;
+    } catch (error: any) {
+      HTTPError.handleServiceError(error);
+    }
+  }
+  static async deleteProfile(id: number) {
+    try {
+      const profile = new Profile(id);
+      const result = await profile.destroy();
+      return result;
+    } catch (error: any) {
+      HTTPError.handleServiceError(error);
+    }
+  }
 }

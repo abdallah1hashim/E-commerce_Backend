@@ -5,6 +5,8 @@ import {
   getUser,
   getAllUsers,
   signUp,
+  editUserData,
+  createUser,
 } from "../controllers/auth";
 import { authorize } from "../middlewares/isAuth";
 import { permissions } from "../rbacConfig";
@@ -30,13 +32,23 @@ router.get(
   getUser
 );
 router.get(
-  "/me",
+  "/me/:id",
   isAuthenticated,
   authorize(permissions.VIEW_OWN_USER),
   getUser
 );
-router.post("/users", isAuthenticated, authorize(permissions.CREATE_USER));
-router.put("/users/:id", isAuthenticated, authorize(permissions.UPDATE_USER));
+router.post(
+  "/users",
+  isAuthenticated,
+  authorize(permissions.CREATE_USER),
+  createUser
+);
+router.put(
+  "/users/:id",
+  isAuthenticated,
+  authorize(permissions.UPDATE_USER),
+  editUserData
+);
 router.delete(
   "/users/:id",
   isAuthenticated,

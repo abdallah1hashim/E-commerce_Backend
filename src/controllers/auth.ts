@@ -103,6 +103,7 @@ export const isAuthenticated = async (
       res.status(401).json({ message: "Token expired" });
       return;
     }
+    req.userId = id;
     req.userRole = role;
 
     //  refresh the token if it's near expiry
@@ -201,6 +202,33 @@ export const editUserData = async (
     res
       .status(200)
       .json({ updatadUser: user, message: "User updated successfully" });
+  } catch (error: any) {
+    HTTPError.handleControllerError(error, next);
+  }
+};
+
+export const deleteUserData = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const id = Number(req.params.id);
+    const deleteType = req.query.type as string;
+    if (isNaN(id)) {
+      throw new HTTPError(400, "Invalid user ID");
+    }
+    switch (deleteType) {
+      case "user":
+        await UserService.deleteUser(id);
+        break;
+      case "profile":
+        await UserService.deleteProfile(id);
+        break;
+      default:
+        throw new HTTPError(400, "Invalid delete type");
+    }
+    res.status(200).json({ message: "User deleted successfully" });
   } catch (error: any) {
     HTTPError.handleControllerError(error, next);
   }
