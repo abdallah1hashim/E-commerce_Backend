@@ -23,6 +23,7 @@ export default class ProductDetails {
     this.img_preview = img_preview;
     this.product_id = product_id;
   }
+
   async getbyProductId(product_id: number) {
     try {
       const result = await pool.query(

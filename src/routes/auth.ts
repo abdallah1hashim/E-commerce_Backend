@@ -7,6 +7,7 @@ import {
   signUp,
   editUserData,
   createUser,
+  deleteUserData,
 } from "../controllers/auth";
 import { authorize } from "../middlewares/isAuth";
 import { permissions } from "../rbacConfig";
@@ -52,7 +53,8 @@ router.put(
 router.delete(
   "/users/:id",
   isAuthenticated,
-  authorize(permissions.DELETE_USER)
+  authorize(permissions.DELETE_USER),
+  deleteUserData
 );
 
 export default router;

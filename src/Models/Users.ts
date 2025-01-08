@@ -79,6 +79,7 @@ export class User {
     }
   }
   async createUser() {
+    console.log("hoi");
     try {
       console.log(
         "name:",
@@ -92,9 +93,11 @@ export class User {
         `INSERT INTO "user"(name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING *`,
         [this.name, this.email, this.password, this.role || "customer"]
       );
+      console.log(result);
       if (result.rows.length === 0) {
         throw new HTTPError(404, "User not created");
       }
+      return result.rows[0] as User;
     } catch (error: any) {
       HTTPError.handleModelError(error);
     }
@@ -143,7 +146,7 @@ export class User {
         [this.email]
       );
       if (result.rows.length === 0) {
-        throw new HTTPError(401, "Invalid credentials");
+        return null;
       }
       return result.rows[0] as User;
     } catch (error: any) {

@@ -28,7 +28,7 @@ CREATE TABLE "product_details" (
     "size" "Size" NOT NULL,
     "color" VARCHAR(30) NOT NULL,
     "price" INTEGER NOT NULL,
-    "discount" INTEGER NOT NULL DEFAULT 0,
+    "discount" INTEGER NOT NULL DEFAULT 0 CHECK ("discount" >= 0 AND "discount" < 100),
     "stock" INTEGER NOT NULL DEFAULT 0,
     "img_preview" VARCHAR(255) NOT NULL,
     "product_id" INTEGER NOT NULL,
@@ -54,9 +54,6 @@ CREATE TABLE "category" (
     "id" SERIAL NOT NULL,
     "name" VARCHAR(30) NOT NULL,
     "parent_id" INTEGER,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
     CONSTRAINT "category_pkey" PRIMARY KEY ("id")
 );
 

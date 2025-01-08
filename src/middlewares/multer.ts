@@ -56,17 +56,15 @@ export const handleProductImages = async (req: Request) => {
   }
 
   const processedImages = images.map((file, index) => {
-    const imagePath = path.join(
-      __dirname,
-      "..",
-      "..",
-      "images",
-      Date.now() + "-" + Math.random().toString(36) + "-" + file.originalname
-    );
+    const timestamp = Date.now();
+    const uniqueSuffix = Math.random().toString(36).substring(2, 8);
+    const fileName = `${timestamp}-${uniqueSuffix}-${file.originalname}`;
+
+    const imagePath = path.join(__dirname, "..", "..", "images", fileName);
 
     return {
       originalName: file.originalname,
-      databasePath: `/images/${file.originalname}`,
+      databasePath: `/images/${fileName}`,
       buffer: file.buffer,
       localPath: imagePath,
     };

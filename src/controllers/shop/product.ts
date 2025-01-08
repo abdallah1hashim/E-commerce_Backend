@@ -15,6 +15,7 @@ import {
   saveImages,
 } from "../../middlewares/multer";
 import { Size } from "../../types/types";
+import ProductDetails from "../../Models/ProductDetails";
 
 export const getAllProducts = async (
   req: Request,
@@ -34,10 +35,10 @@ export const getAllProducts = async (
       searchTerm,
       category,
     });
-    const total_products = await Product.getProductsCount({
+    const total_products = +(await Product.getProductsCount({
       category,
       searchTerm,
-    });
+    }));
     res.status(200).json({
       products,
       total_products,
@@ -55,8 +56,9 @@ export const createProduct = async (
   res: Response,
   next: NextFunction
 ) => {
-  // console.log("files in req", req.files);
+  console.log("body in req", req.body);
   try {
+    console.log("createProduct");
     // 1. Validate input
     const validatedProduct = productSchema.parse(req.body);
 
@@ -81,6 +83,8 @@ export const createProduct = async (
 
     const imagesDBPaths = imgaes.map((img) => img.databasePath);
     const PreviewImagesDBPaths = PreviewImages.map((img) => img.databasePath);
+    console.log("PreviewImages: ", PreviewImages);
+    console.log("imagesDBPaths:", imagesDBPaths);
     // product_details
     const product_details = validatedProduct.product_details.map((pd, i) => ({
       size: pd.size as Size,
@@ -111,6 +115,7 @@ export const createProduct = async (
     // // 5. send response
     res.status(201).json({ message: "Product created successfully" });
   } catch (err: any) {
+    console.log(err);
     next(err);
   }
 };
@@ -125,10 +130,12 @@ export const getProductById = async (
     if (isNaN(productId)) {
       throw new HTTPError(400, "Invalid product ID");
     }
-    const result = (await ProductService.getProductByIdWithImages(
-      productId
-    )) as Product & { images: ProductImages[] };
-    res.status(200).json({ result });
+    const productWithImages =
+      (await ProductService.getProductByIdWithImagesAndDetails(
+        productId
+      )) as Product & { images: ProductImages[] };
+
+    res.status(200).json({ product: { ...productWithImages } });
   } catch (err: any) {
     HTTPError.handleControllerError(err, next);
   }

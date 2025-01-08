@@ -38,6 +38,17 @@ export default class ProductService {
       client.release();
     }
   }
+  static async getProductByIdWithImagesAndDetails(
+    id: number
+  ): Promise<ProductWithImages | void> {
+    try {
+      const product = new Product(id);
+      const retrievedProduct = await product.getByIdwithImagesAndDetails();
+      return { ...retrievedProduct };
+    } catch (error) {
+      HTTPError.handleServiceError(error);
+    }
+  }
   static async createProduct(
     name: string,
     description: string,

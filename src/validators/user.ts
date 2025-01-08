@@ -33,6 +33,7 @@ const Role = z.enum(["admin", "customer", "staff", "supplier"], {
     return { message: "Invalid role" };
   },
 });
+const IsActive = z.boolean();
 
 export const signUpSchema = z.object({
   name: Name,
@@ -53,10 +54,11 @@ export const UserScehma = z.object({
   name: Name,
   email: Email,
   password: Password,
-  role: Role.optional(),
+  role: Role.optional().default("customer"),
+  isActive: IsActive.optional().default(true),
 });
 
-export type UserT = Omit<z.infer<typeof UserScehma>, "password">;
+export type UserT = z.infer<typeof UserScehma>;
 
 export const profileSchema = z.object({
   first_name: FirstName,

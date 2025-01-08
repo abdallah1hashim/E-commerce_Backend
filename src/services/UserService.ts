@@ -5,7 +5,7 @@ import HTTPError from "../libs/HTTPError";
 import { config } from "dotenv";
 import { createToken } from "../libs/utils";
 import { UserRole } from "../types/types";
-import { ProfileT, UserWithProfileT } from "../validators/user";
+import { ProfileT, UserT, UserWithProfileT } from "../validators/user";
 import Profile from "../Models/Profile";
 import pool from "../libs/db";
 
@@ -28,17 +28,18 @@ export class UserService {
       HTTPError.handleServiceError(error);
     }
   }
-  static async createUser(
-    name: string,
-    email: string,
-    password: string,
-    role?: UserRole
-  ): Promise<void> {
+  static async createUser(result: UserT): Promise<void> {
     try {
-      const hashedPassword = await hash(password, 10);
-
+      const hashedPassword = await hash(result.password, 10);
       // Check if the user already exists
-      const user = new User(undefined, name, email, hashedPassword, role);
+      const user = new User(
+        undefined,
+        result.name,
+        result.email,
+        hashedPassword,
+        result.role,
+        result.isActive
+      );
       const existingUser = await user.getUserByEmail();
 
       if (existingUser) {
@@ -46,7 +47,9 @@ export class UserService {
       }
 
       // Create the user
-      await user.createUser();
+      const res = await user.createUser();
+      console.log(res);
+      return;
     } catch (error: any) {
       HTTPError.handleServiceError(error);
     }

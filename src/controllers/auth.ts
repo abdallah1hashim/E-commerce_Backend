@@ -18,8 +18,8 @@ export const signUp = async (
       res.status(400).json({ errors: errors.array() });
       return;
     }
-    const { name, email, password } = req.body;
-    await UserService.createUser(name, email, password);
+    const result = UserScehma.parse(req.body);
+    await UserService.createUser(result);
     res.status(201).json({ message: "User created successfully" });
   } catch (error: any) {
     HTTPError.handleControllerError(error, next);
@@ -119,7 +119,6 @@ export const isAuthenticated = async (
           7 * 24 * 60 * 60 * 1000,
       });
     }
-
     next();
   } catch (error: any) {
     res.status(401).json({ message: "Invalid token", error: error.message });
@@ -159,8 +158,9 @@ export const createUser = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { name, email, password, role } = UserScehma.parse(req.body);
-    const user = await UserService.createUser(name, email, password, role);
+    const result = UserScehma.parse(req.body);
+    const user = await UserService.createUser(result);
+    console.log(user);
     res.status(201).json({ message: "User created successfully", user: user });
   } catch (error: any) {
     HTTPError.handleControllerError(error, next);
@@ -213,8 +213,10 @@ export const deleteUserData = async (
   next: NextFunction
 ) => {
   try {
+    console.log("hii");
     const id = Number(req.params.id);
-    const deleteType = req.query.type as string;
+    console.log(id);
+    const deleteType = req.query.type || ("user" as string);
     if (isNaN(id)) {
       throw new HTTPError(400, "Invalid user ID");
     }

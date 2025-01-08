@@ -4,6 +4,7 @@ import Pool from "../libs/db";
 import CategoryModel from "./Category";
 
 export default class Product {
+  private overview_img?: string;
   private created_at?: Date;
   private updated_at?: Date;
   private bought_times?: number;
@@ -24,17 +25,23 @@ export default class Product {
     offset?: number;
     searchTerm?: string;
     category?: string;
-  }): Promise<Product[]> {
+  }) {
     const client = await Pool.connect();
     try {
       let query = `
         SELECT 
-          p.*, 
-          c.name AS category_name
+            p.*, 
+            c.name AS category_name,
+            (
+                SELECT image_url 
+                FROM product_images 
+                WHERE product_id = p.id 
+                LIMIT 1
+            ) as overview_img
         FROM 
-          product p 
+            product p 
         LEFT JOIN 
-          category c ON p.category_id = c.id
+            category c ON p.category_id = c.id
       `;
       const params: any[] = [];
       const conditions: string[] = [];
@@ -154,6 +161,79 @@ export default class Product {
           WHERE 
             p.id = $1
           limit 1
+        `;
+      const results = await (client || Pool).query(query, [this.id]);
+      if (results.rows.length === 0) {
+        return null;
+      }
+      return results.rows[0];
+    } catch (error: any) {
+      HTTPError.handleModelError(error);
+    }
+  }
+  async getByIdwithImagesAndDetails(client?: PoolClient) {
+    try {
+      const query = `
+            SELECT 
+              p.*, 
+              c.name AS category, 
+              COALESCE(pd.details, ARRAY[]::json[]) AS details,
+              COALESCE(pi.images, ARRAY[]::json[]) AS images,
+              COALESCE(g.groups, ARRAY[]::json[]) AS groups
+            FROM 
+              product p 
+            LEFT JOIN category c ON p.category_id = c.id
+            LEFT JOIN (
+              SELECT 
+                product_id, 
+                array_agg(
+                  json_build_object(
+                    'id', id,
+                    'size', size,
+                    'color', color,
+                    'stock', stock,
+                    'price', price,
+                    'discount', discount,
+                    'img_preview', img_preview
+                  )
+                ) AS details
+              FROM 
+                product_details
+              GROUP BY 
+                product_id
+            ) pd ON p.id = pd.product_id
+            LEFT JOIN (
+              SELECT 
+                product_id, 
+                array_agg(
+                  json_build_object(
+                    'id', id,
+                    'image_url', image_url
+                  )
+                ) AS images
+              FROM 
+                product_images
+              GROUP BY 
+                product_id
+            ) pi ON p.id = pi.product_id
+            LEFT JOIN (
+              SELECT 
+                gtp."B" AS product_id, 
+                array_agg(
+                  json_build_object(
+                    'id', g.id,
+                    'name', g.name
+                  )
+                ) AS groups
+              FROM 
+                "_GroupToProduct" gtp
+              JOIN 
+                "group" g ON gtp."A" = g.id
+              GROUP BY 
+                gtp."B"
+            ) g ON p.id = g.product_id
+            WHERE 
+              p.id = $1;
         `;
       const results = await (client || Pool).query(query, [this.id]);
       if (results.rows.length === 0) {
