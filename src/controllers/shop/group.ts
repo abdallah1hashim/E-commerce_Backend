@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import Group from "../../Models/Group";
 import HTTPError from "../../libs/HTTPError";
-import { groupSchema } from "../../validators/Schemas";
+import { groupSchema } from "../../validators/ZodSchemas";
 
 export const getGroups = async (
   req: Request,

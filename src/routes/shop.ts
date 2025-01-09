@@ -2,14 +2,6 @@
 import { NextFunction, Request, Response, Router } from "express";
 
 import {
-  addToCart,
-  getCartItems,
-  removeAllFromCart,
-  removeItemFromCart,
-  updateQuantityInCart,
-} from "../controllers/shop/shop";
-
-import {
   createCategory,
   deleteCategory,
   getCategores,
@@ -27,10 +19,6 @@ import {
 import { authorize } from "../middlewares/isAuth";
 
 import uploadMiddleware from "../middlewares/multer";
-import cartValidator, {
-  cartIdValidator,
-  cartQuantityValidator,
-} from "../validators/cart";
 import { permissions } from "../rbacConfig";
 import { checkOwnership } from "../middlewares/checkOwnership";
 import { body } from "express-validator";
@@ -42,6 +30,12 @@ import {
   getOneGroup,
   updateGroup,
 } from "../controllers/shop/group";
+import {
+  addToCart,
+  getCartItems,
+  removeItem,
+  updateQuantity,
+} from "../controllers/shop/cart";
 
 const router = Router();
 
@@ -122,30 +116,19 @@ router.post(
   "/cart",
   isAuthenticated,
   authorize(permissions.CREATE_OWN_CART),
-  cartValidator,
   addToCart
 );
 router.delete(
   "/cart",
   isAuthenticated,
   authorize(permissions.DELETE_OWN_CART),
-  removeAllFromCart
+  removeItem
 );
 router.put(
-  "/cart",
+  "/cart/:id",
   isAuthenticated,
   authorize(permissions.UPDATE_OWN_CART),
-  cartIdValidator,
-  checkOwnership("cart"),
-  cartQuantityValidator,
-  updateQuantityInCart
-);
-router.delete(
-  "/cart",
-  isAuthenticated,
-  cartIdValidator,
-  checkOwnership("cart"),
-  removeItemFromCart
+  updateQuantity
 );
 
 // order routes
@@ -170,12 +153,6 @@ router.put("/order", isAuthenticated, authorize(permissions.UPDATE_ORDER));
 router.get("/order", isAuthenticated, authorize(permissions.VIEW_OWN_ORDERS));
 router.post("/order", isAuthenticated, authorize(permissions.CREATE_OWN_ORDER));
 router.put("/order", isAuthenticated, authorize(permissions.UPDATE_OWN_ORDER));
-
-// user routes
-router.get("/user", isAuthenticated, authorize(permissions.VIEW_ALL_USERS));
-router.post("/user", isAuthenticated, authorize(permissions.UPDATE_OWN_USER));
-router.put("/user", isAuthenticated, authorize(permissions.UPDATE_USER));
-router.delete("/user", isAuthenticated, authorize(permissions.DELETE_USER));
 
 export default router;
 /**

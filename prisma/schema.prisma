@@ -29,7 +29,8 @@ model Product {
   created_at      DateTime         @default(now())
   updated_at      DateTime         @updatedAt
 
-  category Category @relation(fields: [category_id], references: [id])
+  category Category    @relation(fields: [category_id], references: [id])
+  cart     CartItems[]
 
   @@map("product")
 }
@@ -46,7 +47,8 @@ model ProductDetails {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product Product     @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  cart    CartItems[]
 
   @@map("product_details")
 }
@@ -95,6 +97,8 @@ model User {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   profile    Profile?
+
+  cart CartItems[]
 
   @@map("user")
 }
@@ -149,45 +153,30 @@ enum PaymentMethod {
   Stripe
 }
 
-// model Cart {
-//   id                Int             @id @default(autoincrement())
-//   product_id        Int
-//   product           Product         @relation(fields: [product_id], references: [id], onDelete: Cascade)
-//   product_detail_id Int
-//   product_detail    ProductDetails @relation(fields: [product_detail_id], references: [id], onDelete: Cascade)
-//   quantity          Int
-//   user_id           Int
-//   user              User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
-//   created_at        DateTime        @default(now())
-//   updated_at        DateTime        @updatedAt
+model CartItems {
+  id                 Int @id @default(autoincrement())
+  user_id            Int
+  product_id         Int
+  product_details_id Int
+  quantity           Int
 
-//   //
-//   @@map("cart")
-// }
+  user            User           @relation(fields: [user_id], references: [id])
+  product         Product        @relation(fields: [product_id], references: [id])
+  product_details ProductDetails @relation(fields: [product_details_id], references: [id])
+
+  @@map("cart_items")
+}
 
 // model Order {
 //   id           Int          @id @default(autoincrement())
-//   user_id      Int
-//   user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
 //   total_amount Decimal      @db.Decimal(10, 2)
 //   status       String
+
 //   created_at   DateTime     @default(now())
 //   updated_at   DateTime     @updatedAt
-//   order_items  OrderItems[]
+
+//   user User[]
 
 //   //
 //   @@map("order")
-// }
-
-// model OrderItems {
-//   id             Int     @id @default(autoincrement())
-//   order_id       Int
-//   order          Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
-//   product_id     Int
-//   product        Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
-//   quantity       Int
-//   price_per_item Decimal @db.Decimal(10, 2)
-
-//   //
-//   @@map("order_items")
 // }
