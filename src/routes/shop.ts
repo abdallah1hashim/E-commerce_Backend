@@ -112,6 +112,12 @@ router.get(
   authorize(permissions.VIEW_OWN_CART),
   getCartItems
 );
+router.get(
+  "/cart/:userId",
+  isAuthenticated,
+  authorize(permissions.VIEW_OWN_CART),
+  getCartItems
+);
 router.post(
   "/cart",
   isAuthenticated,

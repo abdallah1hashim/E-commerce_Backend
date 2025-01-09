@@ -11,9 +11,9 @@ export const authorize = (requiredPermission: string) => {
       const isOwnerPermission = requiredPermission.includes("OWN");
       if (isOwnerPermission) {
         const userId = req.userId as number;
-        const resourceId = req.params.id
-          ? Number(req.params.id)
-          : Number(req.body.id);
+        const resourceId = req.params.userId
+          ? Number(req.params.userId)
+          : Number(req.body.userId);
         if (userId !== resourceId) {
           res.status(403).json({ message: "Forbidden: Access denied" });
           return;

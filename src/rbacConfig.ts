@@ -66,6 +66,12 @@ export const Roles = {
     permissions.CREATE_ORDER,
     permissions.UPDATE_ORDER,
     permissions.DELETE_ORDER,
+    // cart
+    permissions.VIEW_CART,
+    permissions.VIEW_OWN_CART,
+    permissions.CREATE_OWN_CART,
+    permissions.UPDATE_OWN_CART,
+    permissions.DELETE_OWN_CART,
   ],
   staff: [
     // product
